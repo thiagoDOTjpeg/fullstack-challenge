@@ -19,7 +19,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('users')
-@Controller('users')
+@Controller('/api/users')
 export class UserController {
   constructor(
     @Inject('USER_SERVICE') private readonly userClient: ClientProxy,

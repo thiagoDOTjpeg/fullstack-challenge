@@ -4,7 +4,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags("auth")
-@Controller('auth')
+@Controller('/api/auth')
 export class AuthController {
   constructor(@Inject("AUTH_SERVICE") private readonly authClient: ClientProxy) { }
 

@@ -1,6 +1,7 @@
-import { CreateTaskDto, TaskStatus } from '@challenge/types';
-import { Body, Controller, Inject, Post, Req } from '@nestjs/common';
+import { CreateTaskDto } from '@challenge/types';
+import { Body, Controller, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { AuthGuard } from '@nestjs/passport';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags("tasks")
@@ -8,13 +9,13 @@ import { ApiTags } from '@nestjs/swagger';
 export class TasksController {
   constructor(@Inject("TASKS_SERVICE") private readonly tasksClient: ClientProxy) { }
 
+  @UseGuards(AuthGuard("jwt"))
   @Post()
-  createTask(@Body() dto: CreateTaskDto, @Req() req) {
+  createTask(@Body() dto: CreateTaskDto, @Req() req: any) {
     const payload = {
       ...dto,
-      creatorId: req.user.id,
-      status: dto.status || TaskStatus.TODO
+      creator_id: req.user.id
     };
-    return this.tasksClient.send("create_task", payload);
+    return this.tasksClient.send("tasks.create", payload);
   }
 }
