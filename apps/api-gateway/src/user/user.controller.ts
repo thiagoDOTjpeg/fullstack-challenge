@@ -22,25 +22,25 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 @Controller('users')
 export class UserController {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userClient: ClientProxy,
   ) { }
 
   @Post()
   @ApiOperation({ summary: 'Criar usuário (Proxy para Auth Service)' })
   create(@Body() dto: RegisterAuthDto) {
-    return this.authClient.send('users.create', dto);
+    return this.userClient.send('users.create', dto);
   }
 
   @Get()
   @ApiOperation({ summary: 'Listar usuários' })
   getAll(@Query() pagination: PaginationQueryDto) {
-    return this.authClient.send('users.find_all', pagination);
+    return this.userClient.send('users.find_all', pagination);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar usuário por ID' })
   getById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.authClient.send('users.find_one', id);
+    return this.userClient.send('users.find_one', id);
   }
 
   @Patch(':id')
@@ -49,12 +49,12 @@ export class UserController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserDto
   ) {
-    return this.authClient.send('users.update', { id, dto });
+    return this.userClient.send('users.update', { id, dto });
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Deletar usuário' })
   delete(@Param('id', ParseUUIDPipe) id: string) {
-    return this.authClient.send('users.delete', id);
+    return this.userClient.send('users.delete', id);
   }
 }
