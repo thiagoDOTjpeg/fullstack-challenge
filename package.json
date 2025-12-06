@@ -5,10 +5,10 @@
     "build": "turbo run build",
     "dev": "turbo run dev",
     "dev:gateway": "turbo run dev --filter=@challenge/api-gateway",
+    "dev:auth": "turbo run dev --filter=@challenge/auth-service",
     "lint": "turbo run lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types",
-    "build:types": "turbo run build --filter=@challenge/types"
+    "build:types": "turbo run build --filter=@challenge/types",
+    "build:exceptions": "turbo run build --filter=@challenge/exceptions"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
