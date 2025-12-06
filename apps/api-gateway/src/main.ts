@@ -1,7 +1,10 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { config } from 'dotenv';
 import { AppModule } from './app.module';
+
+config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +18,10 @@ async function bootstrap() {
   SwaggerModule.setup("api/docs", app, document);
 
   app.enableCors();
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true }))
-  await app.listen(process.env.PORT ?? 3000);
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
+
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`API Gateway running on port ${port}`);
 }
 bootstrap();
