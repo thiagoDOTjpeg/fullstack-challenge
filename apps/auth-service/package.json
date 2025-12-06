@@ -12,9 +12,9 @@
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
     "typeorm": "typeorm-ts-node-commonjs -d db/datasource.ts",
     "migration:generate": "npm run build && npm run typeorm -- migration:generate",
+    "migration:create": "npm run migration:generate -- db/migrations/$npm_config_name",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "migration:show": "npm run typeorm -- migration:show"
@@ -26,7 +26,6 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/typeorm": "^11.0.0",
     "bcryptjs": "^3.0.3",
-    "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",

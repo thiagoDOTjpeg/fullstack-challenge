@@ -11,7 +11,8 @@ export class AuthService {
 
   async login(dto: LoginAuthDto) {
     const user = await this.userService.getByEmail(dto.email);
-    if (!bcrypt.compare(dto.password, user.password)) throw new UnauthorizedException("Email/Senha incorretos ou inválidos");
+    const isMatch = await bcrypt.compare(dto.password, user.password);
+    if (!isMatch) throw new UnauthorizedException("Email/Senha incorretos ou inválidos");
     const accessToken: string = await this.generateAccessToken(user);
     const refreshToken: string = await this.generateRefreshToken(user);
     return {
