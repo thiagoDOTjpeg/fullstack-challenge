@@ -1,26 +1,27 @@
-import { TaskPriority, TaskStatus } from '@challenge/types';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { TaskPriority, TaskStatus } from "@challenge/types";
+import { Comment } from "src/comment/entity/comment.entity";
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-@Entity('tasks')
+@Entity("tasks")
 export class Task {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
   @Column()
   title!: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   description!: string;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: TaskPriority,
     default: TaskPriority.MEDIUM
   })
   priority!: TaskPriority;
 
   @Column({
-    type: 'enum',
+    type: "enum",
     enum: TaskStatus,
     default: TaskStatus.TODO
   })
@@ -29,11 +30,14 @@ export class Task {
   @Column("simple-array", { nullable: true })
   assignees!: string[];
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: "timestamp" })
   deadline!: Date;
 
-  @Column({ name: 'creator_id' })
+  @Column({ name: "creator_id" })
   creator_id!: string;
+
+  @OneToMany(() => Comment, (comment) => comment.task)
+  comments!: Comment[];
 
   @CreateDateColumn()
   created_at!: Date;

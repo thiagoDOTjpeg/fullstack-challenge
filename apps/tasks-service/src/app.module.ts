@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from 'db/datasource';
 import { TaskModule } from './task/task.module';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { TaskModule } from './task/task.module';
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     TaskModule,
+    CommentModule,
   ],
   controllers: [],
   providers: [],
