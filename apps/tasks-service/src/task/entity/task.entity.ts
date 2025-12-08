@@ -26,6 +26,9 @@ export class Task {
   })
   status!: TaskStatus;
 
+  @Column("simple-array", { nullable: true })
+  assignees!: string[];
+
   @Column({ type: 'timestamp' })
   deadline!: Date;
 

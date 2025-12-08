@@ -11,4 +11,9 @@ export class TaskController {
   create(@Payload() dto: CreateTaskDto & { creator_id: string }) {
     return this.taskService.create(dto)
   }
+
+  @MessagePattern('task.assign_user')
+  assignUser(@Payload() data: { task_id: string, user_id: string, assigner_id: string }) {
+    return this.taskService.assignUser(data);
+  }
 }
