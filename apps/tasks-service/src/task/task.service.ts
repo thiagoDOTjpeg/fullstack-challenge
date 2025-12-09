@@ -67,8 +67,6 @@ export class TaskService {
 
   async comment(data: { task_id: string, author_id: string, content: string }): Promise<Comment> {
     const task = await this.taskRepository.findOne({ where: { id: data.task_id } })
-    console.log(task);
-
     if (!task) throw new NotFoundException();
 
     return await this.commentService.create(data);
