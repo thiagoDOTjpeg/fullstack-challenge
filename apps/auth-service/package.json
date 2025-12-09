@@ -12,6 +12,7 @@
     "dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "test": "jest",
     "typeorm": "typeorm-ts-node-commonjs -d db/datasource.ts",
     "migration:generate": "npm run build && npm run typeorm -- migration:generate",
     "migration:create": "npm run migration:generate -- db/migrations/$npm_config_name",
@@ -71,6 +72,9 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "moduleNameMapper": {
+      "^src/(.*)$": "<rootDir>/$1"
+    },
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
