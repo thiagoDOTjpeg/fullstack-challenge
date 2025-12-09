@@ -1,5 +1,6 @@
 import { CreateTaskDto, PaginationQueryDto, PaginationResultDto } from '@challenge/types';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CommentService } from 'src/comment/comment.service';
 import { Comment } from 'src/comment/entity/comment.entity';
@@ -10,6 +11,7 @@ import { Task } from './entity/task.entity';
 export class TaskService {
   constructor(
     @InjectRepository(Task) private taskRepository: Repository<Task>,
+    @Inject("NOTIFICATION_SERVICE") private readonly notificationClient: ClientProxy,
     private readonly commentService: CommentService
   ) { }
 
@@ -60,6 +62,7 @@ export class TaskService {
     if (!task.assignees.includes(data.user_id)) {
       task.assignees.push(data.user_id);
       await this.taskRepository.save(task);
+      this.notificationClient.emit("task.assigned", { userId: data.user_id, taskTitle: task.title })
     }
 
     return task;

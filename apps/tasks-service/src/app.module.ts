@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from 'db/datasource';
-import { TaskModule } from './task/task.module';
 import { CommentModule } from './comment/comment.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
   imports: [

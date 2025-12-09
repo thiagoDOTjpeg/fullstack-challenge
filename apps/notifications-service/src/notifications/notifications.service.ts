@@ -11,9 +11,9 @@ export class NotificationsService {
     private readonly wsGateway: NotificationsGateway,
   ) { }
 
-  async notifyTaskAssigned(data: { userId: string; taskId: string }) {
+  async notifyTaskAssigned(data: { userId: string, taskTitle: string }) {
     const title = 'Nova Atribuição';
-    const content = `Você foi atribuído à tarefa ${data.taskId}`;
+    const content = `Você foi atribuído à tarefa ${data.taskTitle}`;
 
     const notification = this.notificationRepository.create({ user_id: data.userId, title, content });
     await this.notificationRepository.save(notification);
