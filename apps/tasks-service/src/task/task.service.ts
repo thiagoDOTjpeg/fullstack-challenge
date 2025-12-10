@@ -1,4 +1,4 @@
-import { CreateTaskDto, PaginationQueryDto, PaginationResultDto } from '@challenge/types';
+import { CreateTaskPayload, PaginationQueryDto, PaginationResultDto, UpdateTaskPayload } from '@challenge/types';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,8 +15,21 @@ export class TaskService {
     private readonly commentService: CommentService
   ) { }
 
-  async create(dto: CreateTaskDto & { creator_id: string }): Promise<Task> {
+  async create(dto: CreateTaskPayload): Promise<Task> {
     return await this.taskRepository.save(dto)
+  }
+
+  async update(data: UpdateTaskPayload) {
+    const task = await this.taskRepository.findOne({ where: { id: data.task_id } });
+    if (!task) throw new NotFoundException("Task não encontrada");
+
+    Object.assign(task, data)
+
+    const updatedTask = await this.taskRepository.save(task);
+
+    this.notificationClient.emit("task.updated", updatedTask);
+
+    return updatedTask;
   }
 
   async getAll(pagination: PaginationQueryDto): Promise<PaginationResultDto<Task[]>> {
@@ -62,7 +75,7 @@ export class TaskService {
     if (!task.assignees.includes(data.user_id)) {
       task.assignees.push(data.user_id);
       await this.taskRepository.save(task);
-      this.notificationClient.emit("task.assigned", { userId: data.user_id, taskTitle: task.title })
+      this.notificationClient.emit("task.updated", { userId: data.user_id, taskTitle: task.title })
     }
 
     return task;
@@ -72,6 +85,22 @@ export class TaskService {
     const task = await this.taskRepository.findOne({ where: { id: data.task_id } })
     if (!task) throw new NotFoundException();
 
-    return await this.commentService.create(data);
+    const createdComment = await this.commentService.create(data);
+
+    let recipients: string[] = []
+
+    if (task.assignees) {
+      for (const assignee of task.assignees) {
+        recipients.push(assignee);
+      }
+
+    }
+
+    const payload = {
+      recipients,
+      content: data.content
+    }
+    this.notificationClient.emit("task.comment", payload)
+    return createdComment;
   }
 }
