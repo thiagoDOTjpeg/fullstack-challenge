@@ -28,3 +28,7 @@ export class CreateTaskDto {
   @IsDateString()
   deadline: Date;
 }
+
+export interface CreateTaskPayload extends CreateTaskDto {
+  creator_id: string
+}
