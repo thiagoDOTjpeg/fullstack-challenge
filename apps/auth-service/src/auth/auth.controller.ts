@@ -1,7 +1,7 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 
-import { LoginAuthDto } from '@challenge/types';
+import { LoginAuthDto, RegisterAuthDto } from '@challenge/types';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -10,6 +10,11 @@ export class AuthController {
 
   @MessagePattern("auth.login")
   login(@Payload() dto: LoginAuthDto) {
+    return this.authService.login(dto);
+  }
+
+  @MessagePattern("auth.register")
+  register(@Payload() dto: RegisterAuthDto) {
     return this.authService.login(dto);
   }
 }

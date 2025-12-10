@@ -1,4 +1,4 @@
-import { LoginAuthDto } from '@challenge/types';
+import { LoginAuthDto, RegisterAuthDto, ResponseAuthDto } from '@challenge/types';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from "bcryptjs";
@@ -9,7 +9,7 @@ import { UserService } from 'src/user/user.service';
 export class AuthService {
   constructor(@Inject() private userService: UserService, @Inject() private jwtService: JwtService) { }
 
-  async login(dto: LoginAuthDto) {
+  async login(dto: LoginAuthDto): Promise<ResponseAuthDto> {
     const user = await this.userService.getByEmail(dto.email);
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) throw new UnauthorizedException("Email/Senha incorretos ou inválidos");
@@ -17,7 +17,27 @@ export class AuthService {
     const refreshToken: string = await this.generateRefreshToken(user);
     return {
       accessToken,
-      refreshToken
+      refreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    }
+  }
+
+  async register(dto: RegisterAuthDto): Promise<ResponseAuthDto> {
+    const user = await this.userService.create(dto)
+    const accessToken: string = await this.generateAccessToken(user);
+    const refreshToken: string = await this.generateRefreshToken(user);
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email
+      }
     }
   }
 
