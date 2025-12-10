@@ -1,5 +1,5 @@
-import { AssignTaskDto, CreateCommentDto, CreateTaskDto, PaginationQueryDto } from '@challenge/types';
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { AssignTaskDto, CreateCommentDto, CreateTaskDto, PaginationQueryDto, UpdateTaskDto } from '@challenge/types';
+import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -43,6 +43,23 @@ export class TasksController {
       assigner_id: req.user.id
     };
     return this.tasksClient.send("task.assign_user", payload);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Patch("/:id")
+  @ApiOperation({ summary: 'Atualizar uma tarefa existente' })
+  @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)', example: 'uuid-v4' })
+  @ApiResponse({ status: 200, description: 'Tarefa atualizada com sucesso.' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos.' })
+  @ApiResponse({ status: 404, description: 'Tarefa não encontrada.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  update(@Body() dto: UpdateTaskDto, @Param("id") task_id: string, @Req() req: any) {
+    const payload = {
+      ...dto,
+      task_id,
+      author_id: req.user.id
+    }
+    return this.tasksClient.send("task.update", payload);
   }
 
   @UseGuards(AuthGuard("jwt"))
