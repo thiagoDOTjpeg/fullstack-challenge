@@ -19,7 +19,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  notifyUser(userId: string, payload: any) {
-    this.server.to(`user_${userId}`).emit('notification', payload);
+  notifyUser(userId: string, event: string, payload: any) {
+    this.server.to(`user_${userId}`).emit(event, payload);
   }
 }

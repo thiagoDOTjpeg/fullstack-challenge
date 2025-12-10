@@ -11,7 +11,7 @@ export class NotificationsController {
     await this.service.notifyTaskAssigned(data);
   }
 
-  @EventPattern('comment.created')
+  @EventPattern('task.comment')
   async handleNewComment(@Payload() data: any) {
     await this.service.notifyNewComment(data);
   }
