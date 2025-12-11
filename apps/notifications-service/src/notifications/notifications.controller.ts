@@ -14,7 +14,7 @@ export class NotificationsController {
 
   @EventPattern('task.updated')
   async handleTaskUpdate(@Payload() data: TaskNotificationPayload) {
-    await this.service.notifyTaskAssigned(data);
+    await this.service.notifyTaskUpdated(data);
   }
 
   @EventPattern('task.comment')
