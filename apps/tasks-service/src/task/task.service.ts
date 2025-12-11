@@ -23,15 +23,26 @@ export class TaskService {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException("Task não encontrada");
 
-    Object.assign(task, data)
 
+    Object.assign(task, data);
     const updatedTask = await this.taskRepository.save(task);
 
-    this.notificationClient.emit("task.updated", updatedTask);
+    const payload: TaskNotificationPayload = {
+      recipients: updatedTask.assignees || [],
+      task: {
+        id: updatedTask.id,
+        title: updatedTask.title,
+        status: updatedTask.status,
+        description: updatedTask.description,
+        assigneeIds: updatedTask.assignees || []
+      },
+      action: (data.status && data.status !== task.status) ? "STATUS_CHANGE" : undefined
+    };
+
+    this.notificationClient.emit("task.updated", payload);
 
     return updatedTask;
   }
-
   async getAll(pagination: PaginationQueryPayload): Promise<PaginationResultDto<Task[]>> {
     const { limit = 10, page = 1 } = pagination;
 
