@@ -14,3 +14,5 @@ export class PaginationQueryDto {
   @Min(1)
   limit?: number = 10;
 }
+
+export interface PaginationQueryPayload extends PaginationQueryDto { }

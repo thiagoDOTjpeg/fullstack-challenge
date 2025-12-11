@@ -11,3 +11,5 @@ export class LoginAuthDto {
   @IsNotEmpty()
   password: string;
 }
+
+export interface LoginAuthPayload extends LoginAuthDto { };

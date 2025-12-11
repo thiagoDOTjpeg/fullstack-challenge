@@ -5,5 +5,10 @@ export class AssignTaskDto {
   @ApiProperty({ example: 'uuid-do-usuario', description: 'ID do usuário a ser atribuído' })
   @IsNotEmpty()
   @IsUUID()
-  user_id: string;
+  assigneeId: string;
+}
+
+export interface AssignTaskPayload extends AssignTaskDto {
+  taskId: string,
+  assignerId: string
 }

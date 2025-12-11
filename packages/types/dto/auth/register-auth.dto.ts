@@ -16,3 +16,5 @@ export class RegisterAuthDto {
   @MinLength(6)
   password: string;
 }
+
+export interface RegisterAuthPayload extends RegisterAuthDto { };

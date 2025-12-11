@@ -1,4 +1,5 @@
 export * from "./auth/login-auth.dto"
+export * from "./auth/refresh-auth.dto"
 export * from "./auth/register-auth.dto"
 export * from "./auth/response-auth.dto"
 export * from "./pagination/pagination-query.dto"
@@ -7,6 +8,4 @@ export * from "./tasks/assign-task.dto"
 export * from "./tasks/create-comment.dto"
 export * from "./tasks/create-task.dto"
 export * from "./tasks/update-task.dto"
-export * from "./users/response-user.dto"
-export * from "./users/update-user.dto"
 

@@ -12,3 +12,8 @@ export class CreateCommentDto {
   @MaxLength(1000, { message: 'O comentário não pode ter mais de 1000 caracteres.' })
   content: string;
 }
+
+export interface CreateCommentPayload extends CreateCommentDto {
+  taskId: string,
+  authorId: string
+}
