@@ -1,3 +1,4 @@
+import { CreateCommentPayload } from "@challenge/types";
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -13,28 +14,28 @@ export class CommentService {
     @Inject("NOTIFICATION_SERVICE") private readonly notificationClient: ClientProxy
   ) { }
 
-  async create(data: { task_id: string, author_id: string, content: string }): Promise<Comment> {
+  async create(data: CreateCommentPayload): Promise<Comment> {
     const savedComment = await this.commentRepository.save(data);
-    const task = await this.taskRepository.findOne({ where: { id: data.task_id } })
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } })
 
     if (task) {
       const recipients = new Set<string>();
 
-      recipients.add(task.creator_id);
+      recipients.add(task.creatorId);
 
       if (task.assignees) {
         task.assignees.forEach(id => recipients.add(id));
       }
 
-      recipients.delete(data.author_id);
+      recipients.delete(data.authorId);
 
       if (recipients.size > 0) {
         this.notificationClient.emit("comment.created", {
           commentId: savedComment.id,
-          taskId: data.task_id,
+          taskId: data.taskId,
           taskTitle: task.title,
           content: data.content,
-          authorId: data.author_id,
+          authorId: data.authorId,
           recipients: Array.from(recipients)
         });
       }

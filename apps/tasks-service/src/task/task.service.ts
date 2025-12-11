@@ -1,4 +1,4 @@
-import { CreateTaskPayload, PaginationQueryDto, PaginationResultDto, UpdateTaskPayload } from '@challenge/types';
+import { AssignTaskPayload, CreateCommentPayload, CreateTaskPayload, PaginationQueryPayload, PaginationResultDto, TaskNotificationPayload, UpdateTaskPayload } from '@challenge/types';
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -19,8 +19,8 @@ export class TaskService {
     return await this.taskRepository.save(dto)
   }
 
-  async update(data: UpdateTaskPayload) {
-    const task = await this.taskRepository.findOne({ where: { id: data.task_id } });
+  async update(data: UpdateTaskPayload): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
     if (!task) throw new NotFoundException("Task não encontrada");
 
     Object.assign(task, data)
@@ -32,7 +32,7 @@ export class TaskService {
     return updatedTask;
   }
 
-  async getAll(pagination: PaginationQueryDto): Promise<PaginationResultDto<Task[]>> {
+  async getAll(pagination: PaginationQueryPayload): Promise<PaginationResultDto<Task[]>> {
     const { limit = 10, page = 1 } = pagination;
 
     const skip = (page - 1) * limit;
@@ -54,7 +54,7 @@ export class TaskService {
     };
   }
 
-  async getById(task_id: string) {
+  async getById(task_id: string): Promise<Task> {
     const query = this.taskRepository.createQueryBuilder("task")
       .leftJoinAndSelect("task.comments", "comments")
       .andWhere("task.id = :id", { id: task_id })
@@ -63,8 +63,8 @@ export class TaskService {
     return task;
   }
 
-  async assignUser(data: { task_id: string, user_id: string, assigner_id: string }) {
-    const task = await this.taskRepository.findOne({ where: { id: data.task_id } });
+  async assignUser(data: AssignTaskPayload): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
 
     if (!task) throw new NotFoundException();
 
@@ -72,17 +72,27 @@ export class TaskService {
       task.assignees = [];
     }
 
-    if (!task.assignees.includes(data.user_id)) {
-      task.assignees.push(data.user_id);
-      await this.taskRepository.save(task);
-      this.notificationClient.emit("task.updated", { userId: data.user_id, taskTitle: task.title })
+    if (!task.assignees.includes(data.assigneeId)) {
+      task.assignees.push(data.assigneeId);
+      const savedTask = await this.taskRepository.save(task);
+      const payload: TaskNotificationPayload = {
+        recipients: [data.assigneeId],
+        task: {
+          id: savedTask.id,
+          assigneeIds: savedTask.assignees,
+          status: savedTask.status,
+          title: savedTask.title,
+          description: savedTask.description,
+        },
+        action: "ASSIGNED"
+      }
+      this.notificationClient.emit("task.assigned", payload)
     }
-
     return task;
   }
 
-  async comment(data: { task_id: string, author_id: string, content: string }): Promise<Comment> {
-    const task = await this.taskRepository.findOne({ where: { id: data.task_id } })
+  async comment(data: CreateCommentPayload): Promise<Comment> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } })
     if (!task) throw new NotFoundException();
 
     const createdComment = await this.commentService.create(data);
@@ -96,9 +106,20 @@ export class TaskService {
 
     }
 
-    const payload = {
+    const payload: TaskNotificationPayload = {
       recipients,
-      content: data.content
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        description: task.description,
+        assigneeIds: recipients,
+      },
+      comment: {
+        authorId: data.authorId,
+        content: data.content
+      },
+      action: "COMMENT",
     }
     this.notificationClient.emit("task.comment", payload)
     return createdComment;

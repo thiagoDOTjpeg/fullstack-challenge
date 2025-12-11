@@ -1,5 +1,4 @@
-import type { CreateTaskPayload, UpdateTaskPayload } from "@challenge/types";
-import { PaginationQueryDto } from "@challenge/types";
+import type { AssignTaskPayload, CreateCommentPayload, CreateTaskPayload, PaginationQueryPayload, UpdateTaskPayload } from "@challenge/types";
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
 import { TaskService } from "./task.service";
@@ -14,7 +13,7 @@ export class TaskController {
   }
 
   @MessagePattern("task.assign_user")
-  assignUser(@Payload() data: { task_id: string, user_id: string, assigner_id: string }) {
+  assignUser(@Payload() data: AssignTaskPayload) {
     return this.taskService.assignUser(data);
   }
 
@@ -24,12 +23,12 @@ export class TaskController {
   }
 
   @MessagePattern("task.comment")
-  comment(@Payload() data: { task_id: string, author_id: string, content: string }) {
+  comment(@Payload() data: CreateCommentPayload) {
     return this.taskService.comment(data);
   }
 
   @MessagePattern("task.find_all")
-  getAll(@Payload() pagination: PaginationQueryDto) {
+  getAll(@Payload() pagination: PaginationQueryPayload) {
     return this.taskService.getAll(pagination);
   }
 
