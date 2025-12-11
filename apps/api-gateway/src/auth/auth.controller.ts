@@ -1,4 +1,4 @@
-import { LoginAuthDto, RegisterAuthDto } from '@challenge/types';
+import { LoginAuthDto, RefreshAuthDto, RegisterAuthDto } from '@challenge/types';
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -17,7 +17,7 @@ export class AuthController {
 
   @Post("/login")
   @ApiOperation({ summary: "Login do usuário" })
-  @ApiResponse({ status: 200, description: 'Login realizado com sucesso. Retorna tokens (access_token, refresh_token,).' })
+  @ApiResponse({ status: 200, description: 'Login realizado com sucesso. Retorna tokens (access_token, refresh_token).' })
   @ApiResponse({ status: 401, description: 'Credenciais inválidas (Email ou senha incorretos).' })
   @ApiBody({ type: LoginAuthDto })
   login(@Body() dto: LoginAuthDto) {
@@ -32,5 +32,14 @@ export class AuthController {
   @ApiBody({ type: RegisterAuthDto })
   register(@Body() dto: RegisterAuthDto) {
     return this.authClient.send("auth.register", dto);
+  }
+
+  @Post("/refresh")
+  @ApiOperation({ summary: "Renovar token de acesso" })
+  @ApiResponse({ status: 200, description: 'Token renovado com sucesso. Retorna novo access_token.' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou expirado.' })
+  @ApiBody({ type: RefreshAuthDto })
+  refresh(@Body() dto: RefreshAuthDto) {
+    return this.authClient.send("auth.refresh", dto);
   }
 }

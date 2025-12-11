@@ -1,4 +1,4 @@
-import { AssignTaskDto, CreateCommentDto, CreateTaskDto, PaginationQueryDto, UpdateTaskDto } from '@challenge/types';
+import { AssignTaskDto, AssignTaskPayload, CreateCommentDto, CreateCommentPayload, CreateTaskDto, CreateTaskPayload, PaginationQueryDto, UpdateTaskDto, UpdateTaskPayload } from '@challenge/types';
 import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
@@ -23,9 +23,9 @@ export class TasksController {
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
   @ApiResponse({ status: 401, description: 'Não autorizado.' })
   createTask(@Body() dto: CreateTaskDto, @Req() req: any) {
-    const payload = {
+    const payload: CreateTaskPayload = {
       ...dto,
-      creator_id: req.user.id
+      authorId: req.user.id
     };
     return this.tasksClient.send("tasks.create", payload);
   }
@@ -36,11 +36,11 @@ export class TasksController {
   @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)', example: 'uuid-v4' })
   @ApiResponse({ status: 201, description: 'Usuário atribuído com sucesso.' })
   @ApiResponse({ status: 404, description: 'Tarefa ou Usuário não encontrados.' })
-  assignUser(@Body() dto: AssignTaskDto, @Param("id") task_id: string, @Req() req: any) {
-    const payload = {
-      user_id: dto.user_id,
-      task_id,
-      assigner_id: req.user.id
+  assignUser(@Body() dto: AssignTaskDto, @Param("id") taskId: string, @Req() req: any) {
+    const payload: AssignTaskPayload = {
+      assigneeId: dto.assigneeId,
+      taskId,
+      assignerId: req.user.id
     };
     return this.tasksClient.send("task.assign_user", payload);
   }
@@ -53,11 +53,11 @@ export class TasksController {
   @ApiResponse({ status: 400, description: 'Dados inválidos.' })
   @ApiResponse({ status: 404, description: 'Tarefa não encontrada.' })
   @ApiResponse({ status: 401, description: 'Não autorizado.' })
-  update(@Body() dto: UpdateTaskDto, @Param("id") task_id: string, @Req() req: any) {
-    const payload = {
+  update(@Body() dto: UpdateTaskDto, @Param("id") taskId: string, @Req() req: any) {
+    const payload: UpdateTaskPayload = {
       ...dto,
-      task_id,
-      author_id: req.user.id
+      taskId: taskId,
+      authorId: req.user.id
     }
     return this.tasksClient.send("task.update", payload);
   }
@@ -67,10 +67,10 @@ export class TasksController {
   @ApiOperation({ summary: 'Adicionar um comentário na tarefa' })
   @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)' })
   @ApiResponse({ status: 201, description: 'Comentário adicionado.' })
-  comment(@Body() dto: CreateCommentDto, @Param("id") task_id: string, @Req() req: any) {
-    const payload = {
-      task_id,
-      author_id: req.user.id,
+  comment(@Body() dto: CreateCommentDto, @Param("id") taskId: string, @Req() req: any) {
+    const payload: CreateCommentPayload = {
+      taskId: taskId,
+      authorId: req.user.id,
       content: dto.content
     };
     return this.tasksClient.send("task.comment", payload);
@@ -82,8 +82,8 @@ export class TasksController {
   @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)' })
   @ApiResponse({ status: 200, description: 'Tarefa encontrada.' })
   @ApiResponse({ status: 404, description: 'Tarefa não encontrada.' })
-  getById(@Param("id", ParseUUIDPipe) id: string) {
-    return this.tasksClient.send("task.find_one", id);
+  getById(@Param("id", ParseUUIDPipe) taskId: string) {
+    return this.tasksClient.send("task.find_one", taskId);
   }
 
   @UseGuards(AuthGuard("jwt"))
