@@ -1,4 +1,4 @@
-import { LoginAuthDto, RegisterAuthDto, ResponseAuthDto } from '@challenge/types';
+import { LoginAuthPayload, RefreshAuthPayload, RegisterAuthPayload, ResponseAuthDto } from '@challenge/types';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from "bcryptjs";
@@ -9,7 +9,7 @@ import { UserService } from 'src/user/user.service';
 export class AuthService {
   constructor(@Inject() private userService: UserService, @Inject() private jwtService: JwtService) { }
 
-  async login(dto: LoginAuthDto): Promise<ResponseAuthDto> {
+  async login(dto: LoginAuthPayload): Promise<ResponseAuthDto> {
     const user = await this.userService.getByEmail(dto.email);
     const isMatch = await bcrypt.compare(dto.password, user.password);
     if (!isMatch) throw new UnauthorizedException("Email/Senha incorretos ou inválidos");
@@ -26,7 +26,7 @@ export class AuthService {
     }
   }
 
-  async register(dto: RegisterAuthDto): Promise<ResponseAuthDto> {
+  async register(dto: RegisterAuthPayload): Promise<ResponseAuthDto> {
     const user = await this.userService.create(dto)
     const accessToken: string = await this.generateAccessToken(user);
     const refreshToken: string = await this.generateRefreshToken(user);
@@ -39,6 +39,10 @@ export class AuthService {
         email: user.email
       }
     }
+  }
+
+  async refresh(payload: RefreshAuthPayload) {
+
   }
 
   private async generateAccessToken(user: User) {
