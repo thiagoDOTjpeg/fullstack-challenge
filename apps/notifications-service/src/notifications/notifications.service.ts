@@ -1,3 +1,4 @@
+import { TaskNotificationPayload } from '@challenge/types';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,30 +12,57 @@ export class NotificationsService {
     private readonly wsGateway: NotificationsGateway,
   ) { }
 
-  async notifyTaskAssigned(data: { userId: string, taskTitle: string }) {
-    const notification = await this.saveNotification(data.userId, "Nova Atribuição", `Você foi atribuído à tarefa ${data.taskTitle}`)
-    await this.notificationRepository.save(notification);
+  async notifyTaskAssigned(payload: TaskNotificationPayload) {
+    for (const userId of payload.recipients) {
+      const notification = await this.saveNotification(
+        userId,
+        "Nova Atribuição",
+        `Você foi atribuído à tarefa: ${payload.task.title}`
+      );
 
-    this.wsGateway.notifyUser(data.userId, "task.updated", notification);
+      this.wsGateway.notifyUser(userId, "task:updated", notification);
+    }
   }
 
-  async notifyTaskCreated(data: { userId: string; taskTitle: string }) {
-    const notification = await this.saveNotification(data.userId, 'Nova Tarefa', `Tarefa ${data.taskTitle} criada.`);
+  async notifyTaskUpdated(payload: TaskNotificationPayload) {
+    for (const userId of payload.recipients) {
+      const content = payload.action === 'STATUS_CHANGE'
+        ? `A tarefa "${payload.task.title}" mudou de status para ${payload.task.status}`
+        : `A tarefa "${payload.task.title}" foi atualizada.`;
 
-    this.wsGateway.notifyUser(data.userId, 'task:created', notification);
+      const notification = await this.saveNotification(userId, 'Atualização', content);
+
+      this.wsGateway.notifyUser(userId, 'task:updated', notification);
+    }
   }
 
-  async notifyNewComment(data: { recipients: string[]; content: string }) {
-    if (data.recipients) {
-      for (const userId of data.recipients) {
-        const notification = await this.saveNotification(userId, 'Novo Comentário', `${data.content.slice(0, 30)}...`);
+  async notifyTaskCreated(payload: TaskNotificationPayload) {
+    for (const userId of payload.recipients) {
+      const notification = await this.saveNotification(
+        userId,
+        'Nova Tarefa',
+        `A tarefa "${payload.task.title}" foi criada.`
+      );
 
-        this.wsGateway.notifyUser(userId, 'comment:new', notification);
-      }
+      this.wsGateway.notifyUser(userId, 'task:created', notification);
+    }
+  }
+
+  async notifyNewComment(payload: TaskNotificationPayload) {
+    if (!payload.comment) return;
+
+    for (const userId of payload.recipients) {
+      const notification = await this.saveNotification(
+        userId,
+        'Novo Comentário',
+        `Em "${payload.task.title}": ${payload.comment.content.slice(0, 30)}...`
+      );
+
+      this.wsGateway.notifyUser(userId, 'comment:new', notification);
     }
   }
 
   private async saveNotification(userId: string, title: string, content: string) {
-    return this.notificationRepository.save(this.notificationRepository.create({ user_id: userId, title, content }));
+    return this.notificationRepository.save(this.notificationRepository.create({ userId, title, content }));
   }
 }
