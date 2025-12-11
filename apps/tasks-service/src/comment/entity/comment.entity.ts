@@ -10,15 +10,15 @@ export class Comment {
   content!: string
 
   @ManyToOne(() => Task, (task) => task.comments, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "task_id" })
+  @JoinColumn()
   task!: Task
 
   @Column()
-  author_id!: string
+  authorId!: string
 
   @Column()
-  task_id!: string
+  taskId!: string
 
   @CreateDateColumn()
-  created_at!: Date;
+  createdAt!: Date;
 }

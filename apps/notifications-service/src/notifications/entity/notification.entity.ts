@@ -5,8 +5,8 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column()
-  user_id!: string;
+  @Column({ name: "userId" })
+  userId!: string;
 
   @Column()
   title!: string;
@@ -17,6 +17,6 @@ export class Notification {
   @Column({ default: false })
   read!: boolean;
 
-  @CreateDateColumn()
-  created_at!: Date;
+  @CreateDateColumn({ name: "createdAt" })
+  createdAt!: Date;
 }

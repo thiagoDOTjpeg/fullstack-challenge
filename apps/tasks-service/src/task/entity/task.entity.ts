@@ -33,15 +33,15 @@ export class Task {
   @Column({ type: "timestamp" })
   deadline!: Date;
 
-  @Column({ name: "creator_id" })
-  creator_id!: string;
+  @Column()
+  creatorId!: string;
 
   @OneToMany(() => Comment, (comment) => comment.task)
   comments!: Comment[];
 
   @CreateDateColumn()
-  created_at!: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updated_at!: Date;
+  updatedAt!: Date;
 }
