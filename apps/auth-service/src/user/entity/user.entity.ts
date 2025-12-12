@@ -12,7 +12,10 @@ export class User {
   email!: string;
 
   @Column()
-  password!: string;
+  passwordHash!: string;
+
+  @Column({ nullable: true })
+  refreshTokenHash!: string;
 
   @CreateDateColumn()
   createdAt!: Date;
