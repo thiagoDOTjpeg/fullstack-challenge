@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from 'db/datasource';
 import { CommentModule } from './comment/comment.module';
 import { TaskModule } from './task/task.module';
+import { HistoryModule } from './history/history.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TaskModule } from './task/task.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     TaskModule,
     CommentModule,
+    HistoryModule,
   ],
   controllers: [],
   providers: [],

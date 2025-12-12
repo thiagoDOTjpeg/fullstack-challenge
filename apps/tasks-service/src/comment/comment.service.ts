@@ -30,7 +30,7 @@ export class CommentService {
       recipients.delete(data.authorId);
 
       if (recipients.size > 0) {
-        this.notificationClient.emit("comment.created", {
+        this.notificationClient.emit("task.comment", {
           commentId: savedComment.id,
           taskId: data.taskId,
           taskTitle: task.title,
