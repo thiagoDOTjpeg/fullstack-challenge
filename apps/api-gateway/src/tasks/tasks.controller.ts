@@ -25,7 +25,7 @@ export class TasksController {
   createTask(@Body() dto: CreateTaskDto, @Req() req: any) {
     const payload: CreateTaskPayload = {
       ...dto,
-      authorId: req.user.id
+      creatorId: req.user.id
     };
     return this.tasksClient.send("tasks.create", payload);
   }
