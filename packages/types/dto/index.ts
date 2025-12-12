@@ -8,4 +8,5 @@ export * from "./tasks/assign-task.dto"
 export * from "./tasks/create-comment.dto"
 export * from "./tasks/create-task.dto"
 export * from "./tasks/update-task.dto"
+export * from "./user/update-user.dto"
 

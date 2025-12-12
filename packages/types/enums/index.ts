@@ -11,3 +11,11 @@ export enum TaskStatus {
   REVIEW = "REVIEW",
   DONE = "DONE"
 }
+
+export enum ActionType {
+  ASSIGNED = "ASSIGNED",
+  STATUS_CHANGE = "STATUS_CHANGE",
+  UPDATE = "UPDATE",
+  CREATED = "CREATED",
+  COMMENT = "COMMENT"
+}

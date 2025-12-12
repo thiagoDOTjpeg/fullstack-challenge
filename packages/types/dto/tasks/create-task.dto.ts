@@ -30,5 +30,5 @@ export class CreateTaskDto {
 }
 
 export interface CreateTaskPayload extends CreateTaskDto {
-  authorId: string
+  creatorId: string
 }

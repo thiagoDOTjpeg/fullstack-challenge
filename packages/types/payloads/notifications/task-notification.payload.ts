@@ -1,3 +1,5 @@
+import { ActionType } from "enums";
+
 export interface TaskNotificationPayload {
   recipients: string[];
   task: {
@@ -11,5 +13,5 @@ export interface TaskNotificationPayload {
     content: string;
     authorId: string;
   };
-  action?: 'ASSIGNED' | 'STATUS_CHANGE' | 'CREATED' | 'COMMENT';
+  action?: ActionType;
 }
