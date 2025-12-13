@@ -1,5 +1,6 @@
+import { UserAlreadyExistsException, UserNotFoundException } from '@challenge/exceptions';
 import { PaginationQueryDto, PaginationResultDto, RegisterAuthPayload, UpdateUserDto } from '@challenge/types';
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from "bcryptjs";
 import { Repository } from 'typeorm';
@@ -12,13 +13,13 @@ export class UserService {
 
   async getByEmail(email: string): Promise<User> {
     const user: User | null = await this.userRepository.findOne({ where: { email: email } });
-    if (!user) throw new NotFoundException();
+    if (!user) throw new UserNotFoundException();
     return user;
   }
 
   async getById(userId: string): Promise<User> {
     const user: User | null = await this.userRepository.findOne({ where: { id: userId } })
-    if (!user) throw new NotFoundException();
+    if (!user) throw new UserNotFoundException();
     return user;
   }
   async getAll(pagination: PaginationQueryDto): Promise<PaginationResultDto<User[]>> {
@@ -45,7 +46,7 @@ export class UserService {
 
   async create(payload: RegisterAuthPayload): Promise<User> {
     const exists = await this.userRepository.findOne({ where: [{ email: payload.email }, { username: payload.username }] })
-    if (exists) throw new ConflictException("Email/Usuário já utilizados");
+    if (exists) throw new UserAlreadyExistsException();
     const hashedPassword = await bcrypt.hash(payload.password, 10);
     const savedUser = await this.userRepository.save({ username: payload.username, email: payload.email, passwordHash: hashedPassword });
     return savedUser;
@@ -57,7 +58,7 @@ export class UserService {
       ...dto,
     });
 
-    if (!user) throw new NotFoundException("Usuário não encontrado");
+    if (!user) throw new UserNotFoundException();
 
     if (dto.password) {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
@@ -76,7 +77,7 @@ export class UserService {
       id: userId
     });
 
-    if (!user) throw new NotFoundException("Usuário não encontrado");
+    if (!user) throw new UserNotFoundException();
 
     const savedUser = await this.userRepository.save({ ...user, refreshTokenHash: "" });
     return savedUser;
