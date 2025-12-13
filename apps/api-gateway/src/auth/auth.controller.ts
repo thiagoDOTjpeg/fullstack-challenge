@@ -1,4 +1,4 @@
-import { LoginAuthDto, RefreshAuthDto, RegisterAuthDto } from '@challenge/types';
+import { LoginAuthDto, LogoutAuthPayload, RefreshAuthDto, RegisterAuthDto } from '@challenge/types';
 import { Body, Controller, Inject, Post, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
@@ -49,9 +49,9 @@ export class AuthController {
   @ApiOperation({ summary: "Realizar logout do usuário" })
   @ApiResponse({ status: 200, description: 'Logout realizado com sucesso. Invalida o refresh token do usuário.' })
   logout(@Req() request: any) {
-    const dto: RefreshAuthDto = {
-      refreshToken: request.headers['authorization'].substring(("Bearer ").length)
+    const payload: LogoutAuthPayload = {
+      accessToken: request.headers['authorization'].substring(("Bearer ").length),
     }
-    return this.authClient.send("auth.logout", dto);
+    return this.authClient.send("auth.logout", payload);
   }
 }
