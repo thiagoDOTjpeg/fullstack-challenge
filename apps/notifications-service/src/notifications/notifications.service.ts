@@ -20,7 +20,10 @@ export class NotificationsService {
         `Você foi atribuído à tarefa: ${payload.task.title}`
       );
 
-      this.wsGateway.notifyUser(userId, "task:updated", notification);
+      this.wsGateway.notifyUser(userId, "task:updated", {
+        content: notification.content,
+        title: notification.title
+      });
     }
   }
 
@@ -32,7 +35,10 @@ export class NotificationsService {
 
       const notification = await this.saveNotification(userId, 'Atualização', content);
 
-      this.wsGateway.notifyUser(userId, 'task:updated', notification);
+      this.wsGateway.notifyUser(userId, 'task:updated', {
+        content: notification.content,
+        title: notification.title
+      });
     }
   }
 
@@ -44,7 +50,10 @@ export class NotificationsService {
         `A tarefa "${payload.task.title}" foi criada.`
       );
 
-      this.wsGateway.notifyUser(userId, 'task:created', notification);
+      this.wsGateway.notifyUser(userId, 'task:created', {
+        content: notification.content,
+        title: notification.title
+      });
     }
   }
 
@@ -58,7 +67,10 @@ export class NotificationsService {
         `Em "${payload.task.title}": ${payload.comment.content.slice(0, 30)}...`
       );
 
-      this.wsGateway.notifyUser(userId, 'comment:new', notification);
+      this.wsGateway.notifyUser(userId, 'comment:new', {
+        content: notification.content,
+        title: notification.title
+      });
     }
   }
 

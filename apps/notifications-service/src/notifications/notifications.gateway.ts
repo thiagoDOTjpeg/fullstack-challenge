@@ -1,3 +1,5 @@
+import { ResponseNotificationDto } from '@challenge/types';
+import { JwtService } from '@nestjs/jwt';
 import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
@@ -6,12 +8,37 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @WebSocketServer()
   server!: Server;
 
-  handleConnection(client: Socket) {
-    const userId = client.handshake.query.userId as string;
+  constructor(private readonly jwtService: JwtService) { }
 
-    if (userId) {
+  async handleConnection(client: Socket) {
+    try {
+      const token =
+        client.handshake.auth?.token ||
+        client.handshake.headers?.authorization?.split(' ')[1];
+
+      if (!token) {
+        throw new Error('Token não fornecido');
+      }
+
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: process.env.JWT_SECRET
+      });
+
+      const userId = payload.sub;
+
+      if (!userId) {
+        throw new Error('User ID inválido no token');
+      }
+
       client.join(`user_${userId}`);
-      console.log(`Client connected: ${client.id} -> User: ${userId}`);
+
+      client.data.user = payload;
+
+      console.log(`✅ Client connected: ${client.id} -> User: ${userId}`);
+
+    } catch (e: any) {
+      console.log(`🚫 Connection rejected: ${client.id} -> ${e.message}`);
+      client.disconnect();
     }
   }
 
@@ -19,7 +46,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
     console.log(`Client disconnected: ${client.id}`);
   }
 
-  notifyUser(userId: string, event: string, payload: any) {
+  notifyUser(userId: string, event: string, payload: ResponseNotificationDto) {
     this.server.to(`user_${userId}`).emit(event, payload);
   }
 }
