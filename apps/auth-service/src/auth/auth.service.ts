@@ -1,5 +1,5 @@
 import { JwtTokenPayload, LoginAuthPayload, RefreshAuthPayload, RegisterAuthPayload, ResponseAuthDto } from '@challenge/types';
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from "bcryptjs";
 import { User } from 'src/user/entity/user.entity';
@@ -8,16 +8,21 @@ import { UserService } from 'src/user/user.service';
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject() private userService: UserService,
-    @Inject() private jwtService: JwtService,
+    private userService: UserService,
+    private jwtService: JwtService,
   ) { }
 
   async login(dto: LoginAuthPayload): Promise<ResponseAuthDto> {
     const user = await this.userService.getByEmail(dto.email);
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
+
     if (!isMatch) throw new UnauthorizedException("Email/Senha incorretos ou inválidos");
+
     const accessToken: string = await this.generateAccessToken(user);
     const refreshToken: string = await this.generateRefreshToken(user);
+
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    await this.userService.update(user.id, { refreshTokenHash });
     return {
       accessToken,
       refreshToken,
@@ -37,7 +42,8 @@ export class AuthService {
       this.generateRefreshToken(user)
     ])
 
-    await this.userService.update(user.id, { refreshToken });
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    await this.userService.update(user.id, { refreshTokenHash });
 
     return {
       accessToken,
@@ -63,7 +69,8 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user);
     const refreshToken = await this.generateRefreshToken(user);
 
-    await this.userService.update(user.id, { refreshToken: refreshToken });
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 10);
+    await this.userService.update(user.id, { refreshTokenHash });
 
     return {
       accessToken,
@@ -74,6 +81,17 @@ export class AuthService {
         email: user.email
       }
     }
+  }
+
+  async logout(payload: RefreshAuthPayload): Promise<Object> {
+    const decodedJwt = await this.jwtService.verifyAsync<JwtTokenPayload>(payload.refreshToken, {
+      secret: process.env.JWT_REFRESH_SECRET,
+    });
+
+    const user = await this.userService.getById(decodedJwt.sub);
+
+    await this.userService.logout(user.id);
+    return {}
   }
 
   private async generateAccessToken(user: User) {

@@ -21,4 +21,9 @@ export class AuthController {
   refresh(@Payload() dto: RefreshAuthPayload) {
     return this.authService.refresh(dto);
   }
+
+  @MessagePattern("auth.logout")
+  logout(@Payload() dto: RefreshAuthPayload) {
+    return this.authService.logout(dto);
+  }
 }

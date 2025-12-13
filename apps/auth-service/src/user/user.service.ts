@@ -63,11 +63,22 @@ export class UserService {
       user.passwordHash = await bcrypt.hash(dto.password, 10);
     }
 
-    if (dto.refreshToken) {
-      user.refreshTokenHash = await bcrypt.hash(dto.refreshToken, 10);
+    if (dto.refreshTokenHash) {
+      user.refreshTokenHash = await bcrypt.hash(dto.refreshTokenHash, 10);
     }
 
     const savedUser = await this.userRepository.save(user);
+    return savedUser;
+  }
+
+  async logout(userId: string) {
+    const user = await this.userRepository.preload({
+      id: userId
+    });
+
+    if (!user) throw new NotFoundException("Usuário não encontrado");
+
+    const savedUser = await this.userRepository.save({ ...user, refreshTokenHash: "" });
     return savedUser;
   }
 }
