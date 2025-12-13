@@ -9,5 +9,5 @@ export class UpdateUserDto extends PartialType(RegisterAuthDto) {
   })
   @IsOptional()
   @IsString()
-  refreshToken?: string;
+  refreshTokenHash?: string;
 }
