@@ -1,5 +1,6 @@
+import { TaskNotFoundRpcException } from '@challenge/exceptions';
 import { ActionType, AssignTaskPayload, CreateCommentPayload, CreateTaskPayload, PaginationQueryPayload, PaginationResultDto, TaskNotificationPayload, UpdateTaskPayload } from '@challenge/types';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CommentService } from 'src/comment/comment.service';
@@ -23,7 +24,7 @@ export class TaskService {
 
   async update(data: UpdateTaskPayload): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
-    if (!task) throw new NotFoundException("Task não encontrada");
+    if (!task) throw new TaskNotFoundRpcException();
 
     const changes: AuditChanges = { old: {}, new: {} };
     let hasChanges = false;
@@ -96,14 +97,14 @@ export class TaskService {
       .leftJoinAndSelect("task.comments", "comments")
       .andWhere("task.id = :id", { id: task_id })
     const task = await query.getOne();
-    if (!task) throw new NotFoundException();
+    if (!task) throw new TaskNotFoundRpcException();
     return task;
   }
 
   async assignUser(data: AssignTaskPayload): Promise<Task> {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
 
-    if (!task) throw new NotFoundException();
+    if (!task) throw new TaskNotFoundRpcException();
 
     if (!task.assignees) task.assignees = [];
 
@@ -142,7 +143,7 @@ export class TaskService {
 
   async comment(data: CreateCommentPayload): Promise<Comment> {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } })
-    if (!task) throw new NotFoundException();
+    if (!task) throw new TaskNotFoundRpcException();
 
     const createdComment = await this.commentService.create(data);
 

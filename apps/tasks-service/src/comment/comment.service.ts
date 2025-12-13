@@ -1,3 +1,4 @@
+import { TaskNotFoundRpcException } from "@challenge/exceptions";
 import { CreateCommentPayload } from "@challenge/types";
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
@@ -15,31 +16,31 @@ export class CommentService {
   ) { }
 
   async create(data: CreateCommentPayload): Promise<Comment> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
+    if (!task) throw new TaskNotFoundRpcException();
+
     const savedComment = await this.commentRepository.save(data);
-    const task = await this.taskRepository.findOne({ where: { id: data.taskId } })
 
-    if (task) {
-      const recipients = new Set<string>();
+    const recipients = new Set<string>();
+    recipients.add(task.creatorId);
 
-      recipients.add(task.creatorId);
-
-      if (task.assignees) {
-        task.assignees.forEach(id => recipients.add(id));
-      }
-
-      recipients.delete(data.authorId);
-
-      if (recipients.size > 0) {
-        this.notificationClient.emit("task.comment", {
-          commentId: savedComment.id,
-          taskId: data.taskId,
-          taskTitle: task.title,
-          content: data.content,
-          authorId: data.authorId,
-          recipients: Array.from(recipients)
-        });
-      }
+    if (task.assignees) {
+      task.assignees.forEach((id) => recipients.add(id));
     }
+
+    recipients.delete(data.authorId);
+
+    if (recipients.size > 0) {
+      this.notificationClient.emit("task.comment", {
+        commentId: savedComment.id,
+        taskId: data.taskId,
+        taskTitle: task.title,
+        content: data.content,
+        authorId: data.authorId,
+        recipients: Array.from(recipients),
+      });
+    }
+
     return savedComment;
   }
 }
