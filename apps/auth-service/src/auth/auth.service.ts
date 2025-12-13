@@ -1,5 +1,5 @@
 import { InvalidTokenException, RefreshTokenReuseException, UnauthorizedRpcException } from "@challenge/exceptions";
-import { JwtTokenPayload, LoginAuthPayload, RefreshAuthPayload, RegisterAuthPayload, ResponseAuthDto } from '@challenge/types';
+import { JwtTokenPayload, LoginAuthPayload, LogoutAuthPayload, RefreshAuthPayload, RegisterAuthPayload, ResponseAuthDto } from '@challenge/types';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { RpcException } from '@nestjs/microservices';
@@ -92,10 +92,11 @@ export class AuthService {
     }
   }
 
-  async logout(payload: RefreshAuthPayload): Promise<Object> {
+  async logout(payload: LogoutAuthPayload): Promise<Object> {
     try {
-      const decodedJwt = await this.jwtService.verifyAsync<JwtTokenPayload>(payload.refreshToken, {
+      const decodedJwt = await this.jwtService.verifyAsync<JwtTokenPayload>(payload.accessToken, {
         secret: process.env.JWT_REFRESH_SECRET,
+        ignoreExpiration: true,
       });
 
       const user = await this.userService.getById(decodedJwt.sub);
