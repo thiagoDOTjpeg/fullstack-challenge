@@ -4,6 +4,6 @@ export interface ResponseTaskHistoryDto {
   authorId: string;
   action: ActionType;
   content: string;
-  changedAt: Date;
+  changedAt: string;
   rawChanges?: any;
 }
