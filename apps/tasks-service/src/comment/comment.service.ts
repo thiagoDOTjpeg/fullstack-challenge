@@ -21,26 +21,6 @@ export class CommentService {
 
     const savedComment = await this.commentRepository.save(data);
 
-    const recipients = new Set<string>();
-    recipients.add(task.creatorId);
-
-    if (task.assignees) {
-      task.assignees.forEach((id) => recipients.add(id));
-    }
-
-    recipients.delete(data.authorId);
-
-    if (recipients.size > 0) {
-      this.notificationClient.emit("task.comment", {
-        commentId: savedComment.id,
-        taskId: data.taskId,
-        taskTitle: task.title,
-        content: data.content,
-        authorId: data.authorId,
-        recipients: Array.from(recipients),
-      });
-    }
-
     return savedComment;
   }
 

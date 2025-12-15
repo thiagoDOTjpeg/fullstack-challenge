@@ -166,13 +166,15 @@ export class TaskService {
       changedBy: data.authorId
     });
 
-    let recipients: string[] = [task.creatorId]
+    let recipients: string[] = [task.creatorId];
 
     if (task.assignees) {
       for (const assignee of task.assignees) {
         recipients.push(assignee);
       }
     }
+
+    recipients = Array.from(new Set(recipients)).filter(r => !!r && r !== data.authorId);
 
     const payload: TaskNotificationPayload = {
       recipients,
@@ -294,7 +296,7 @@ export class TaskService {
         authorId: h.changedBy,
         action: h.action,
         content,
-        changedAt: h.changedAt,
+        changedAt: h.changedAt.toISOString(),
         rawChanges: h.changes,
       } as ResponseTaskHistoryDto;
     });
