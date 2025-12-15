@@ -1,9 +1,9 @@
 import { UserAlreadyExistsException, UserNotFoundException } from '@challenge/exceptions';
-import { PaginationQueryDto, PaginationResultDto, RegisterAuthPayload, UpdateUserDto } from '@challenge/types';
+import { PaginationQueryDto, PaginationResultDto, RegisterAuthPayload, ResponseUserDto, UpdateUserDto } from '@challenge/types';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from "bcryptjs";
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from './entity/user.entity';
 
 @Injectable()
@@ -81,5 +81,14 @@ export class UserService {
 
     const savedUser = await this.userRepository.save({ ...user, refreshTokenHash: "" });
     return savedUser;
+  }
+
+  async getManyByIds(ids: string[]): Promise<ResponseUserDto[]> {
+    if (!ids?.length) return [];
+    const users = await this.userRepository.find({
+      where: { id: In(ids) },
+      select: ['id', 'username', 'email'],
+    });
+    return users as ResponseUserDto[];
   }
 }

@@ -1,4 +1,4 @@
-import type { LoginAuthPayload, RefreshAuthPayload, RegisterAuthPayload } from '@challenge/types';
+import type { LoginAuthPayload, LogoutAuthPayload, RefreshAuthPayload, RegisterAuthPayload } from '@challenge/types';
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AuthService } from './auth.service';
@@ -23,7 +23,7 @@ export class AuthController {
   }
 
   @MessagePattern("auth.logout")
-  logout(@Payload() dto: RefreshAuthPayload) {
+  logout(@Payload() dto: LogoutAuthPayload) {
     return this.authService.logout(dto);
   }
 }
