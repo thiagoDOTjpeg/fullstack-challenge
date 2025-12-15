@@ -1,4 +1,4 @@
-import { AssignTaskDto, AssignTaskPayload, CreateCommentDto, CreateCommentPayload, CreateTaskDto, CreateTaskPayload, PaginationQueryDto, UpdateTaskDto, UpdateTaskPayload } from '@challenge/types';
+import { AssignTaskDto, AssignTaskPayload, CreateCommentDto, CreateCommentPayload, CreateTaskDto, CreateTaskPayload, PaginationQueryDto, PaginationQueryPayload, TaskHistoryPayload, UpdateTaskDto, UpdateTaskPayload } from '@challenge/types';
 import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
@@ -90,7 +90,49 @@ export class TasksController {
   @Get()
   @ApiOperation({ summary: 'Listar tarefas com paginação' })
   @ApiResponse({ status: 200, description: 'Lista de tarefas retornada.' })
-  getAll(@Query() pagination: PaginationQueryDto) {
-    return this.tasksClient.send('task.find_all', pagination);
+  getAll(@Query() pagination: PaginationQueryDto, @Req() request: any) {
+    const payload: PaginationQueryPayload = {
+      ...pagination,
+      userId: request.user.id
+    }
+    return this.tasksClient.send('task.find_all', payload);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get("/:id/comments")
+  @ApiOperation({ summary: "Listar comentários de uma tarefa" })
+  @ApiParam({ name: "id", description: "ID da tarefa (UUID)", example: "uuid-v4" })
+  @ApiResponse({ status: 200, description: "Lista de comentários da tarefa retornada." })
+  @ApiResponse({ status: 401, description: "Não autorizado. Usuário não é criador ou assignee da tarefa." })
+  @ApiResponse({ status: 404, description: "Tarefa não encontrada." })
+  getAllTaskComments(
+    @Param("id", ParseUUIDPipe) taskId: string,
+    @Req() request: any
+  ) {
+    const payload = {
+      taskId,
+      userId: request.user.id
+    };
+    return this.tasksClient.send("task.comment.find_all", payload);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Get(":id/history")
+  @ApiOperation({ summary: "Listar histórico de auditoria de uma tarefa" })
+  @ApiParam({ name: "id", description: "ID da tarefa (UUID)", example: "uuid-v4" })
+  @ApiResponse({ status: 200, description: "Histórico da tarefa retornado." })
+  @ApiResponse({ status: 401, description: "Não autorizado. Usuário não é criador ou assignee da tarefa." })
+  @ApiResponse({ status: 404, description: "Tarefa não encontrada." })
+  getTaskHistory(
+    @Param("id", ParseUUIDPipe) taskId: string,
+    @Query() pagination: PaginationQueryDto,
+    @Req() request: any
+  ) {
+    const payload: TaskHistoryPayload & PaginationQueryPayload = {
+      ...pagination,
+      userId: request.user.id,
+      taskId,
+    };
+    return this.tasksClient.send("task.history", payload);
   }
 }
