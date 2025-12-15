@@ -11,4 +11,9 @@ export class UserController {
   async getManyByIds(@Payload() payload: { ids: string[] }): Promise<ResponseUserDto[]> {
     return this.userService.getManyByIds(payload?.ids ?? []);
   }
+
+  @MessagePattern('users.getAll')
+  async getAll(): Promise<ResponseUserDto[]> {
+    return this.userService.getAllSimple();
+  }
 }

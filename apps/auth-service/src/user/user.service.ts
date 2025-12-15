@@ -91,4 +91,11 @@ export class UserService {
     });
     return users as ResponseUserDto[];
   }
+
+  async getAllSimple(): Promise<ResponseUserDto[]> {
+    const users = await this.userRepository.find({
+      select: ['id', 'username', 'email'],
+    });
+    return users as ResponseUserDto[];
+  }
 }
