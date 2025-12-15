@@ -1,11 +1,12 @@
-import type { AssignTaskPayload, CreateCommentPayload, CreateTaskPayload, PaginationQueryPayload, UpdateTaskPayload } from "@challenge/types";
+import type { AssignTaskPayload, CreateCommentPayload, CreateTaskPayload, PaginationQueryPayload, TaskHistoryPayload, UpdateTaskPayload } from "@challenge/types";
 import { Controller } from "@nestjs/common";
 import { MessagePattern, Payload } from "@nestjs/microservices";
+import { CommentService } from "src/comment/comment.service";
 import { TaskService } from "./task.service";
 
 @Controller("tasks")
 export class TaskController {
-  constructor(private readonly taskService: TaskService) { }
+  constructor(private readonly taskService: TaskService, private readonly commentService: CommentService) { }
 
   @MessagePattern("tasks.create")
   create(@Payload() dto: CreateTaskPayload) {
@@ -27,13 +28,23 @@ export class TaskController {
     return this.taskService.comment(data);
   }
 
+  @MessagePattern("task.comment.find_all")
+  getAllTaskComments(@Payload() data: { taskId: string, userId: string }) {
+    return this.commentService.getByTaskId(data.taskId, data.userId);
+  }
+
+  @MessagePattern("task.history")
+  getAllHistory(@Payload() data: TaskHistoryPayload & PaginationQueryPayload) {
+    return this.taskService.getTaskHistory(data);
+  }
+
   @MessagePattern("task.find_all")
   getAll(@Payload() pagination: PaginationQueryPayload) {
     return this.taskService.getAll(pagination);
   }
 
   @MessagePattern("task.find_one")
-  getById(@Payload() task_id: string) {
-    return this.taskService.getById(task_id);
+  getById(@Payload() taskId: string) {
+    return this.taskService.getById(taskId);
   }
 }

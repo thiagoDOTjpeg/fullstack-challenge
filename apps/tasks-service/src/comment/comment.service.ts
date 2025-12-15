@@ -1,4 +1,4 @@
-import { TaskNotFoundRpcException } from "@challenge/exceptions";
+import { TaskNotFoundRpcException, UnauthorizedRpcException } from "@challenge/exceptions";
 import { CreateCommentPayload } from "@challenge/types";
 import { Inject, Injectable } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
@@ -42,5 +42,24 @@ export class CommentService {
     }
 
     return savedComment;
+  }
+
+  async getByTaskId(taskId: string, userId: string): Promise<Comment[]> {
+    const task = await this.taskRepository.findOne({ where: { id: taskId } });
+    if (!task) throw new TaskNotFoundRpcException();
+
+    const isCreator = task.creatorId === userId;
+    const isAssignee = task.assignees?.includes(userId) ?? false;
+
+    if (!isCreator && !isAssignee) {
+      throw new UnauthorizedRpcException("Você não tem permissão para acessar os comentários desta tarefa");
+    }
+
+    const comments = await this.commentRepository.find({
+      where: { taskId },
+      order: { createdAt: "DESC" },
+    });
+
+    return comments;
   }
 }
