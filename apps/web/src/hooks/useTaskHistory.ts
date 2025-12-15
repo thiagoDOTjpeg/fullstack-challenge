@@ -11,7 +11,6 @@ export function useTaskHistory(taskId: string | null, initialLimit = DEFAULT_LIM
     initialPageParam: 1,
     enabled: !!taskId,
     getNextPageParam: (lastPage: any) => {
-      const meta: any = (lastPage as any)?.meta;
       const pageInfo = (lastPage as any)?.data ?? (lastPage as any)?.meta;
       if (pageInfo && typeof pageInfo.currentPage === 'number' && typeof pageInfo.totalPages === 'number') {
         if (pageInfo.currentPage < pageInfo.totalPages) return pageInfo.currentPage + 1;

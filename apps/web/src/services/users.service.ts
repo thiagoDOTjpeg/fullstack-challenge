@@ -7,3 +7,8 @@ export async function getUsersByIds(ids: string[]): Promise<ResponseUserDto[]> {
   const { data } = await api.get<ResponseUserDto[]>(`/api/users`, { params });
   return data;
 }
+
+export async function getAllUsers(): Promise<ResponseUserDto[]> {
+  const { data } = await api.get<ResponseUserDto[]>(`/api/users`);
+  return data;
+}

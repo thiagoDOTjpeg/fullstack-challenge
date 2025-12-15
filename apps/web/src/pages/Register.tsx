@@ -32,7 +32,7 @@ export function Register() {
 
     try {
       await register({ username, email, password });
-      navigate({ to: "/dashboard" });
+      navigate({ to: "/kanban" });
     } catch (err) {
       const error = err as AxiosError<{ message?: string }>;
       setError(error.response?.data?.message || "Erro ao criar conta");

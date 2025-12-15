@@ -19,9 +19,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { useAllUsers } from "@/hooks/useAllUsers";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useTaskHistory } from "@/hooks/useTaskHistory";
-import { useAddComment, useTask } from "@/hooks/useTasks";
+import { useAddComment, useAssignTask, useTask } from "@/hooks/useTasks";
 import { useUsersByIds } from "@/hooks/useUsersByIds";
 import { commentSchema, type CommentFormData } from "@/lib/schemas";
 import type { TaskPriority, TaskStatus } from "@challenge/types";
@@ -53,13 +54,6 @@ const STATUS_LABELS: Record<string, string> = {
   DONE: "Concluído",
 };
 
-const MOCK_ALL_USERS = [
-  { id: "1", username: "Thiago" },
-  { id: "2", username: "Jungle" },
-  { id: "3", username: "Admin" },
-  { id: "4", username: "Guest" },
-];
-
 export function TaskDetailDialog({
   taskId,
   open,
@@ -87,6 +81,34 @@ export function TaskDetailDialog({
     historyAuthorIds.length > 0 ? historyAuthorIds : undefined
   );
 
+  // Collect any user ids referenced inside history changes (e.g. assignees added/removed)
+  const referencedUserIds = Array.from(
+    new Set(
+      history.flatMap((h: any) => {
+        try {
+          const raw = h.rawChanges ?? h.raw_changes ?? h.changes ?? {};
+          const oldAssignees = Array.isArray(raw.old?.assignees)
+            ? raw.old.assignees
+            : raw.old?.assignees
+              ? [raw.old.assignees]
+              : [];
+          const newAssignees = Array.isArray(raw.new?.assignees)
+            ? raw.new.assignees
+            : raw.new?.assignees
+              ? [raw.new.assignees]
+              : [];
+          return [...oldAssignees, ...newAssignees].filter(Boolean);
+        } catch (e) {
+          return [] as string[];
+        }
+      })
+    )
+  );
+
+  const { data: referencedUsers = [] } = useUsersByIds(
+    referencedUserIds.length > 0 ? referencedUserIds : undefined
+  );
+
   const getHistoryUsername = (id?: string) => {
     if (!id) return "Sistema";
     const u = historyUsers.find((x) => x.id === id);
@@ -102,7 +124,24 @@ export function TaskDetailDialog({
     const raw = entry.rawChanges ?? entry.raw_changes ?? entry.changes;
     const content = entry.content ?? entry.contentHtml ?? entry.message;
     if (content) {
-      if (typeof content === "string") return content;
+      if (typeof content === "string") {
+        // If this is an ASSIGNED action, try to replace user ids with usernames
+        try {
+          if (entry.action === "ASSIGNED" || entry.action === "assigned") {
+            let mapped = content as string;
+            for (const u of referencedUsers) {
+              if (!u || !u.id) continue;
+              const username = u.username ?? u.id;
+              // replace all occurrences of the id with the username
+              mapped = mapped.split(u.id).join(username);
+            }
+            return mapped;
+          }
+        } catch (e) {
+          // fallback to raw content
+        }
+        return content;
+      }
       try {
         if (Array.isArray(content)) return content.join(", ");
         return JSON.stringify(content);
@@ -136,6 +175,15 @@ export function TaskDetailDialog({
 
   const [openAssign, setOpenAssign] = useState(false);
 
+  const { data: allUsers = [], isLoading: isLoadingAllUsers } =
+    useAllUsers(openAssign);
+
+  const assignMutation = useAssignTask();
+
+  const candidateUsers = (allUsers || []).filter(
+    (u) => u.id !== task?.creatorId
+  );
+
   const {
     register,
     handleSubmit,
@@ -159,9 +207,18 @@ export function TaskDetailDialog({
   };
 
   const handleAssignUser = async (userId: string) => {
-    console.log(`Atribuindo usuário ${userId} à tarefa ${taskId}`);
-    toast.success("Usuário convidado com sucesso!");
-    setOpenAssign(false);
+    if (!taskId) return;
+    try {
+      await assignMutation.mutateAsync({
+        id: taskId,
+        data: { assigneeId: userId },
+      });
+      toast.success("Usuário convidado com sucesso!");
+      setOpenAssign(false);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Erro ao convidar usuário");
+      console.error(error);
+    }
   };
 
   const formatFriendlyDate = (date?: string | Date) => {
@@ -381,27 +438,36 @@ export function TaskDetailDialog({
                       <CommandList>
                         <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
                         <CommandGroup heading="Sugestões">
-                          {MOCK_ALL_USERS.map((user) => {
-                            const isAssigned = task?.assignees?.includes(
-                              user.id
-                            );
-                            return (
-                              <CommandItem
-                                key={user.id}
-                                value={user.username}
-                                onSelect={() => {
-                                  if (!isAssigned) handleAssignUser(user.id);
-                                }}
-                                disabled={isAssigned}
-                                className="flex items-center justify-between"
-                              >
-                                <span>{user.username}</span>
-                                {isAssigned && (
-                                  <Check className="h-4 w-4 opacity-50" />
-                                )}
-                              </CommandItem>
-                            );
-                          })}
+                          {isLoadingAllUsers ? (
+                            <CommandItem
+                              disabled
+                              className="flex items-center justify-between"
+                            >
+                              <span>Carregando...</span>
+                            </CommandItem>
+                          ) : (
+                            candidateUsers.map((user) => {
+                              const isAssigned = task?.assignees?.includes(
+                                user.id
+                              );
+                              return (
+                                <CommandItem
+                                  key={user.id}
+                                  value={user.username}
+                                  onSelect={() => {
+                                    if (!isAssigned) handleAssignUser(user.id);
+                                  }}
+                                  disabled={isAssigned}
+                                  className="flex items-center justify-between"
+                                >
+                                  <span>{user.username}</span>
+                                  {isAssigned && (
+                                    <Check className="h-4 w-4 opacity-50" />
+                                  )}
+                                </CommandItem>
+                              );
+                            })
+                          )}
                         </CommandGroup>
                       </CommandList>
                     </Command>

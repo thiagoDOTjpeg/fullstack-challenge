@@ -10,7 +10,6 @@ import {
   Outlet,
   redirect,
 } from "@tanstack/react-router";
-import { Dashboard } from "./pages/Dashboard";
 import { KanbanPage } from "./pages/KanbanPage";
 import { Login } from "./pages/Login";
 import { Register } from "./pages/Register";
@@ -44,7 +43,7 @@ const loginRoute = createRoute({
   component: Login,
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) {
-      throw redirect({ to: "/dashboard" });
+      throw redirect({ to: "/kanban" });
     }
   },
 });
@@ -55,18 +54,7 @@ const registerRoute = createRoute({
   component: Register,
   beforeLoad: ({ context }) => {
     if (context.auth.isAuthenticated) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
-});
-
-const dashboardRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/dashboard",
-  component: Dashboard,
-  beforeLoad: ({ context }) => {
-    if (!context.auth.isAuthenticated) {
-      throw redirect({ to: "/login" });
+      throw redirect({ to: "/kanban" });
     }
   },
 });
@@ -100,7 +88,6 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   registerRoute,
-  dashboardRoute,
   kanbanRoute,
 ]);
 
