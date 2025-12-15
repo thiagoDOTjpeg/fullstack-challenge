@@ -236,13 +236,13 @@ export class TaskService {
           const added = newAssignees.filter(a => !oldSet.has(a));
           const removed = oldAssignees.filter(a => !newSet.has(a));
           if (added.length && !removed.length) {
-            content = added.length === 1 ? `adicionou assignee ${added[0]}` : `adicionou ${added.length} assignees`;
+            content = added.length === 1 ? `adicionou ${added[0]}` : `adicionou ${added.length}`;
           } else if (removed.length && !added.length) {
-            content = removed.length === 1 ? `removeu assignee ${removed[0]}` : `removeu ${removed.length} assignees`;
+            content = removed.length === 1 ? `removeu ${removed[0]}` : `removeu ${removed.length}`;
           } else if (added.length && removed.length) {
             const parts: string[] = [];
-            parts.push(added.length === 1 ? `adicionou assignee ${added[0]}` : `adicionou ${added.length} assignees`);
-            parts.push(removed.length === 1 ? `removeu assignee ${removed[0]}` : `removeu ${removed.length} assignees`);
+            parts.push(added.length === 1 ? `adicionou ${added[0]}` : `adicionou ${added.length}`);
+            parts.push(removed.length === 1 ? `removeu ${removed[0]}` : `removeu ${removed.length}`);
             content = parts.join('; ');
           } else {
             content = 'alterou atribuições';
