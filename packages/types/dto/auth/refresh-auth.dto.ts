@@ -5,7 +5,7 @@ export class RefreshAuthDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsIn...' })
   @IsString()
   @IsNotEmpty()
-  refreshToken: string;
+  refreshToken!: string;
 }
 
 export interface RefreshAuthPayload extends RefreshAuthDto { }

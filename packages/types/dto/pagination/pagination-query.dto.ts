@@ -15,4 +15,6 @@ export class PaginationQueryDto {
   limit?: number = 10;
 }
 
-export interface PaginationQueryPayload extends PaginationQueryDto { }
+export interface PaginationQueryPayload extends PaginationQueryDto {
+  userId: string;
+}
