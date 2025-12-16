@@ -46,6 +46,21 @@ export class TasksController {
   }
 
   @UseGuards(AuthGuard("jwt"))
+  @Post("/:id/unassign")
+  @ApiOperation({ summary: 'Remover um usuário de uma tarefa' })
+  @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)', example: 'uuid-v4' })
+  @ApiResponse({ status: 201, description: 'Usuário desatribuído com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Tarefa ou Usuário não encontrados.' })
+  unassignUser(@Body() dto: AssignTaskDto, @Param("id") taskId: string, @Req() req: any) {
+    const payload: AssignTaskPayload = {
+      assigneeId: dto.assigneeId,
+      taskId,
+      assignerId: req.user.id
+    };
+    return this.tasksClient.send("task.unassign_user", payload);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
   @Patch("/:id")
   @ApiOperation({ summary: 'Atualizar uma tarefa existente' })
   @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)', example: 'uuid-v4' })
