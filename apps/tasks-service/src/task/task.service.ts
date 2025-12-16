@@ -26,56 +26,18 @@ export class TaskService {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
     if (!task) throw new TaskNotFoundRpcException();
 
-    const changes: AuditChanges = { old: {}, new: {} };
-    let hasChanges = false;
+    const changes = this.computeChanges(task, data);
 
-    const { taskId, authorId, ...fieldsToUpdate } = data;
-
-    for (const key of Object.keys(fieldsToUpdate)) {
-      const newValue = fieldsToUpdate[key];
-      const oldValue = task[key];
-
-      if (newValue !== undefined && newValue !== oldValue) {
-        changes.old[key] = oldValue;
-        changes.new[key] = newValue;
-        hasChanges = true;
-      }
+    if (this.hasChanges(changes)) {
+      await this.saveHistory(task.id, changes, data.authorId);
     }
 
-    if (hasChanges) {
-      const changedKeys = Object.keys(changes.new || {}).filter(k => k !== undefined && k !== null);
-      const onlyStatusChanged = changedKeys.length === 1 && changedKeys[0] === 'status';
-      const historyAction = onlyStatusChanged ? ActionType.STATUS_CHANGE : ActionType.UPDATE;
-
-      await this.historyRepository.save({
-        taskId: task.id,
-        action: historyAction,
-        changes: changes,
-        changedBy: authorId
-      });
-    }
-
-    Object.assign(task, fieldsToUpdate);
+    Object.assign(task, data);
     const updatedTask = await this.taskRepository.save(task);
-    const recipients = [...(updatedTask.assignees || []), updatedTask.creatorId].filter((userId) => userId !== data.authorId)
 
-    const notificationAction = (changes.new && (changes.new as any).status !== undefined && (changes.new as any).status !== (changes.old as any).status)
-      ? ActionType.STATUS_CHANGE
-      : ActionType.UPDATE;
-
-    const payload: TaskNotificationPayload = {
-      recipients,
-      task: {
-        id: updatedTask.id,
-        title: updatedTask.title,
-        status: updatedTask.status,
-        description: updatedTask.description,
-        assigneeIds: updatedTask.assignees || []
-      },
-      action: notificationAction
-    };
-
-    this.notificationClient.emit("task.updated", payload);
+    if (this.hasChanges(changes)) {
+      this.notifyUpdate(updatedTask, changes, data.authorId);
+    }
 
     return updatedTask;
   }
@@ -228,7 +190,8 @@ export class TaskService {
       recipients,
       task: {
         id: task.id,
-        title: task.title,
+        title: task.title,    // Define a ação baseada no que mudou
+
         status: task.status,
         description: task.description,
         assigneeIds: recipients,
@@ -349,5 +312,64 @@ export class TaskService {
         currentPage: page,
       },
     };
+  }
+
+  private computeChanges(task: Task, data: UpdateTaskPayload): AuditChanges {
+    const changes: AuditChanges = { old: {}, new: {} };
+    const { taskId, authorId, ...fieldsToUpdate } = data;
+
+    for (const key of Object.keys(fieldsToUpdate)) {
+      const newValue = fieldsToUpdate[key];
+      const oldValue = task[key];
+
+      if (newValue !== undefined && newValue !== oldValue) {
+        changes.old[key] = oldValue;
+        changes.new[key] = newValue;
+      }
+    }
+    return changes;
+  }
+
+  private hasChanges(changes: AuditChanges): boolean {
+    return Object.keys(changes.new).length > 0;
+  }
+
+  private async saveHistory(taskId: string, changes: AuditChanges, authorId: string) {
+    const changedKeys = Object.keys(changes.new);
+    const onlyStatusChanged = changedKeys.length === 1 && changedKeys[0] === 'status';
+
+    const action = onlyStatusChanged ? ActionType.STATUS_CHANGE : ActionType.UPDATE;
+
+    await this.historyRepository.save({
+      taskId,
+      action,
+      changes,
+      changedBy: authorId
+    });
+  }
+
+  private notifyUpdate(task: Task, changes: AuditChanges, authorId: string) {
+    const recipients = [
+      ...(task.assignees || []),
+      task.creatorId
+    ].filter((userId) => userId !== authorId);
+
+    if (recipients.length === 0) return;
+
+    const action = (changes.new as any).status ? ActionType.STATUS_CHANGE : ActionType.UPDATE;
+
+    const payload: TaskNotificationPayload = {
+      recipients,
+      task: {
+        id: task.id,
+        title: task.title,
+        status: task.status,
+        description: task.description,
+        assigneeIds: task.assignees || []
+      },
+      action
+    };
+
+    this.notificationClient.emit("task.updated", payload);
   }
 }
