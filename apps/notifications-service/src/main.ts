@@ -24,11 +24,11 @@ async function bootstrap() {
 
     await app.startAllMicroservices();
 
-    const httpPort = Number(process.env.HTTP_PORT) || 3013;
-    await app.listen(httpPort, '0.0.0.0');
+    const port = Number(process.env.PORT) || 3004;
+    await app.listen(port, '0.0.0.0');
 
     const appLogger = app.get(Logger);
-    appLogger.log(`Notifications Service Health Check listening on HTTP port ${httpPort}`);
+    appLogger.log(`Notifications Service (HTTP + WebSocket) listening on port ${port}`);
 
   } catch (error: any) {
     logger.error('❌ Fatal Error during bootstrap:', error);
