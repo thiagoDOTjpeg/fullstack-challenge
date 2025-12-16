@@ -21,10 +21,12 @@
     "migration:show": "npm run typeorm -- migration:show"
   },
   "dependencies": {
+    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/terminus": "^11.0.0",
     "@nestjs/typeorm": "^11.0.0",
     "bcryptjs": "^3.0.3",
     "nestjs-pino": "^4.5.0",

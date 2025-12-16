@@ -16,24 +16,6 @@ async function bootstrap() {
     },
   });
 
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [process.env.RABBITMQ_URI || 'amqp://admin:admin@localhost:5672'],
-      queue: 'auth_queue',
-      queueOptions: { durable: false },
-    },
-  });
-
-  app.connectMicroservice<MicroserviceOptions>({
-    transport: Transport.RMQ,
-    options: {
-      urls: [process.env.RABBITMQ_URI || 'amqp://admin:admin@localhost:5672'],
-      queue: 'user_queue',
-      queueOptions: { durable: false },
-    },
-  });
-
   await app.startAllMicroservices();
 
   const httpPort = Number(process.env.HTTP_PORT) || 3012;
