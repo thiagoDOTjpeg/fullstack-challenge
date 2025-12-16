@@ -15,9 +15,7 @@ export class HealthController {
   @HealthCheck()
   check() {
     return this.health.check([
-      // Check database connection
       () => this.db.pingCheck('database'),
-      // Check RabbitMQ connection for tasks_queue
       () => this.microservice.pingCheck('rabbitmq-tasks', {
         transport: Transport.RMQ,
         options: {
@@ -27,9 +25,7 @@ export class HealthController {
         },
         timeout: 3000,
       }),
-      // Check memory heap (should not exceed 150MB)
       () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-      // Check memory RSS (should not exceed 300MB)
       () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
     ]);
   }
