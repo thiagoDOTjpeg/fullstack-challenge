@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { dataSourceOptions } from '../db/datasource';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UserModule } from './user/user.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     UserModule,
     AuthModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],

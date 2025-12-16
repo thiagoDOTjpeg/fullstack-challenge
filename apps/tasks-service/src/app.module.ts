@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from 'db/datasource';
 import { LoggerModule } from 'nestjs-pino';
 import { CommentModule } from './comment/comment.module';
+import { HealthModule } from './health/health.module';
 import { HistoryModule } from './history/history.module';
 import { TaskModule } from './task/task.module';
 
@@ -21,6 +22,7 @@ import { TaskModule } from './task/task.module';
     TaskModule,
     CommentModule,
     HistoryModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [],
