@@ -4,15 +4,15 @@ export class AlterTableUserAddRefreshTokenHashAndPasswordHash1765483388960 imple
     name = 'AlterTableUserAddRefreshTokenHashAndPasswordHash1765483388960'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "password"`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "passwordHash" character varying NOT NULL`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "refreshTokenHash" character varying`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" DROP COLUMN "password"`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" ADD "passwordHash" character varying NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" ADD "refreshTokenHash" character varying`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "refreshTokenHash"`);
-        await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "passwordHash"`);
-        await queryRunner.query(`ALTER TABLE "users" ADD "password" character varying NOT NULL`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" DROP COLUMN "refreshTokenHash"`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" DROP COLUMN "passwordHash"`);
+        await queryRunner.query(`ALTER TABLE "auth_service"."users" ADD "password" character varying NOT NULL`);
     }
 
 }

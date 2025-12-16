@@ -4,11 +4,11 @@ export class AlterTableTasksAddAssignees1765208180948 implements MigrationInterf
     name = 'AlterTableTasksAddAssignees1765208180948'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tasks" ADD "assignees" text`);
+        await queryRunner.query(`ALTER TABLE "task_service"."tasks" ADD "assignees" text`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE "tasks" DROP COLUMN "assignees"`);
+        await queryRunner.query(`ALTER TABLE "task_service"."tasks" DROP COLUMN "assignees"`);
     }
 
 }

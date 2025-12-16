@@ -11,7 +11,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: process.env.DB_USER || 'postgres',
   password: String(process.env.DB_PASS || ''),
   database: process.env.DB_NAME || 'postgres',
-  schema: "public",
+  schema: "task_service",
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/db/migrations/*.js'],
   migrationsTableName: 'migrations',
