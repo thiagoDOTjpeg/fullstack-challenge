@@ -10,6 +10,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -22,15 +23,34 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAllUsers } from "@/hooks/useAllUsers";
 import { useTaskComments } from "@/hooks/useTaskComments";
 import { useTaskHistory } from "@/hooks/useTaskHistory";
-import { useAddComment, useAssignTask, useTask } from "@/hooks/useTasks";
+import {
+  useAddComment,
+  useAssignTask,
+  useTask,
+  useUnassignTask,
+  useUpdateTask,
+} from "@/hooks/useTasks";
 import { useUsersByIds } from "@/hooks/useUsersByIds";
-import { commentSchema, type CommentFormData } from "@/lib/schemas";
+import {
+  commentSchema,
+  updateTaskSchema,
+  type CommentFormData,
+  type UpdateTaskFormData,
+} from "@/lib/schemas";
 import type { TaskPriority, TaskStatus } from "@challenge/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, Check, Clock, History, Plus, User } from "lucide-react";
-import { useState } from "react";
+import {
+  Calendar,
+  Check,
+  Clock,
+  History,
+  Plus,
+  Trash,
+  User,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -81,7 +101,6 @@ export function TaskDetailDialog({
     historyAuthorIds.length > 0 ? historyAuthorIds : undefined
   );
 
-  // Collect any user ids referenced inside history changes (e.g. assignees added/removed)
   const referencedUserIds = Array.from(
     new Set(
       history.flatMap((h: any) => {
@@ -125,21 +144,17 @@ export function TaskDetailDialog({
     const content = entry.content ?? entry.contentHtml ?? entry.message;
     if (content) {
       if (typeof content === "string") {
-        // If this is an ASSIGNED action, try to replace user ids with usernames
         try {
           if (entry.action === "ASSIGNED" || entry.action === "assigned") {
             let mapped = content as string;
             for (const u of referencedUsers) {
               if (!u || !u.id) continue;
               const username = u.username ?? u.id;
-              // replace all occurrences of the id with the username
               mapped = mapped.split(u.id).join(username);
             }
             return mapped;
           }
-        } catch (e) {
-          // fallback to raw content
-        }
+        } catch (e) {}
         return content;
       }
       try {
@@ -176,9 +191,10 @@ export function TaskDetailDialog({
   const [openAssign, setOpenAssign] = useState(false);
 
   const { data: allUsers = [], isLoading: isLoadingAllUsers } =
-    useAllUsers(openAssign);
+    useAllUsers(true);
 
   const assignMutation = useAssignTask();
+  const unassignMutation = useUnassignTask();
 
   const candidateUsers = (allUsers || []).filter(
     (u) => u.id !== task?.creatorId
@@ -192,6 +208,77 @@ export function TaskDetailDialog({
   } = useForm<CommentFormData>({
     resolver: zodResolver(commentSchema),
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  const updateMutation = useUpdateTask();
+
+  const {
+    register: registerTask,
+    handleSubmit: handleSubmitTask,
+    setValue: setTaskValue,
+    watch: watchTask,
+    formState: { errors: taskErrors, isSubmitting: isUpdating },
+    reset: resetTask,
+  } = useForm<UpdateTaskFormData>({
+    resolver: zodResolver(updateTaskSchema),
+    defaultValues: {
+      priority: undefined,
+      title: undefined,
+      description: undefined,
+      deadline: undefined,
+      assignees: [] as string[],
+    } as any,
+  });
+
+  const watchedAssignees = watchTask("assignees") || [];
+
+  const mapTaskToForm = (t: any) => {
+    const d = t?.deadline ? new Date(t.deadline) : undefined;
+    const dateStr = d ? d.toISOString().slice(0, 10) : undefined;
+    return {
+      title: t?.title,
+      description: t?.description,
+      priority: t?.priority as any,
+      deadline: dateStr as any,
+      assignees: t?.assignees ?? [],
+    } as any;
+  };
+
+  useEffect(() => {
+    if (task && !isLoading && isEditing) {
+      resetTask(mapTaskToForm(task));
+    }
+  }, [task, isLoading, isEditing, resetTask]);
+
+  const onSubmitUpdate = async (data: UpdateTaskFormData) => {
+    if (!taskId) return;
+    try {
+      const payload: any = {};
+      if (data.title !== undefined) payload.title = data.title;
+      if (data.description !== undefined)
+        payload.description = data.description;
+      if (data.priority !== undefined)
+        payload.priority = data.priority as unknown as TaskPriority;
+      if (data.deadline !== undefined && data.deadline !== "")
+        payload.deadline = new Date(data.deadline);
+      if (data.assignees !== undefined) payload.assignees = data.assignees;
+
+      await updateMutation.mutateAsync({ id: taskId, data: payload });
+      toast.success("Tarefa atualizada com sucesso!");
+      setIsEditing(false);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Erro ao atualizar tarefa");
+    }
+  };
+
+  const toggleAssignee = (id: string) => {
+    const current = watchedAssignees || [];
+    const next = current.includes(id)
+      ? current.filter((x) => x !== id)
+      : [...current, id];
+    setTaskValue("assignees", next);
+  };
 
   const onSubmitComment = async (data: CommentFormData) => {
     if (!taskId) return;
@@ -221,6 +308,53 @@ export function TaskDetailDialog({
     }
   };
 
+  const handleToggleAssign = async (userId: string) => {
+    if (!taskId) return;
+    try {
+      const currentlyAssigned = (task?.assignees ?? []).includes(userId);
+      if (currentlyAssigned) {
+        await unassignMutation.mutateAsync({
+          id: taskId,
+          data: { assigneeId: userId },
+        });
+        toast.success("Usuário removido com sucesso!");
+      } else {
+        await assignMutation.mutateAsync({
+          id: taskId,
+          data: { assigneeId: userId },
+        });
+        toast.success("Usuário convidado com sucesso!");
+      }
+      setOpenAssign(false);
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Erro ao atualizar participantes"
+      );
+      console.error(error);
+    }
+  };
+
+  const [removingAssignee, setRemovingAssignee] = useState<string | null>(null);
+
+  const handleRemoveAssignee = async (userId: string) => {
+    if (!taskId) return;
+    try {
+      setRemovingAssignee(userId);
+      await unassignMutation.mutateAsync({
+        id: taskId,
+        data: { assigneeId: userId },
+      });
+      toast.success("Usuário removido com sucesso!");
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Erro ao remover participante"
+      );
+      console.error(error);
+    } finally {
+      setRemovingAssignee(null);
+    }
+  };
+
   const formatFriendlyDate = (date?: string | Date) => {
     if (!date) return "—";
     const d = typeof date === "string" ? new Date(date) : date;
@@ -244,29 +378,79 @@ export function TaskDetailDialog({
                 <div className="flex items-center gap-3 text-muted-foreground text-xs font-mono mb-2 uppercase tracking-wider">
                   <span>{taskId?.split("-")[0] ?? "TASK"}</span>
                   <span>•</span>
-                  <span>Criado em {formatFriendlyDate(task?.createdAt)}</span>
+                  <span>
+                    {isEditing
+                      ? "Editando tarefa"
+                      : `Criado em ${formatFriendlyDate(task?.createdAt)}`}
+                  </span>
                 </div>
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground leading-tight">
-                  {task?.title}
-                </h2>
+                {isEditing ? (
+                  <Input
+                    placeholder="Título da tarefa"
+                    className="text-2xl font-semibold tracking-tight text-foreground leading-tight"
+                    {...registerTask("title")}
+                  />
+                ) : (
+                  <h2 className="text-2xl font-semibold tracking-tight text-foreground leading-tight">
+                    {task?.title}
+                  </h2>
+                )}
               </div>
             )}
 
             <div className="mt-4 flex items-center gap-2">
-              {!isLoading && task && (
+              {isEditing ? (
                 <>
-                  <Badge
-                    variant="outline"
-                    className={PRIORITY_COLORS[task.priority as TaskPriority]}
+                  <select
+                    className="border-input h-9 rounded-md bg-transparent px-3 text-sm"
+                    {...registerTask("priority")}
                   >
-                    {task.priority}
-                  </Badge>
-                  <Badge variant="secondary" className="font-medium">
-                    {STATUS_LABELS[task.status as TaskStatus]}
-                  </Badge>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="URGENT">URGENT</option>
+                  </select>
                 </>
+              ) : (
+                !isLoading &&
+                task && (
+                  <>
+                    <Badge
+                      variant="outline"
+                      className={PRIORITY_COLORS[task.priority as TaskPriority]}
+                    >
+                      {task.priority}
+                    </Badge>
+                    <Badge variant="secondary" className="font-medium">
+                      {STATUS_LABELS[task.status as TaskStatus]}
+                    </Badge>
+                  </>
+                )
               )}
             </div>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            {!isLoading && task && !isEditing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsEditing(true)}
+              >
+                Editar
+              </Button>
+            )}
+            {!isLoading && task && isEditing && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  resetTask(mapTaskToForm(task));
+                  setIsEditing(false);
+                }}
+              >
+                Cancelar
+              </Button>
+            )}
           </div>
         </div>
 
@@ -279,7 +463,20 @@ export function TaskDetailDialog({
                     <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                       Descrição
                     </h3>
-                    {isLoading ? (
+                    {isEditing ? (
+                      <div>
+                        <Textarea
+                          placeholder="Descrição da tarefa"
+                          className="min-h-40 resize-none bg-background"
+                          {...registerTask("description")}
+                        />
+                        {taskErrors.description && (
+                          <p className="text-xs text-destructive mt-1 ml-1">
+                            {taskErrors.description.message as any}
+                          </p>
+                        )}
+                      </div>
+                    ) : isLoading ? (
                       <div className="space-y-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-5/6" />
@@ -343,30 +540,57 @@ export function TaskDetailDialog({
             </div>
 
             <div className="p-4 border-t bg-muted/10 shrink-0 z-10">
-              <form onSubmit={handleSubmit(onSubmitComment)}>
-                <div className="relative">
-                  <Textarea
-                    placeholder="Escreva um comentário..."
-                    className="min-h-20 pr-20 resize-none bg-background focus-visible:ring-1"
-                    {...register("content")}
-                  />
-                  <div className="absolute bottom-2 right-2">
+              {isEditing ? (
+                <form onSubmit={handleSubmitTask(onSubmitUpdate)}>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        resetTask(mapTaskToForm(task));
+                        setIsEditing(false);
+                      }}
+                      className="h-8 text-xs"
+                    >
+                      Cancelar
+                    </Button>
                     <Button
                       type="submit"
                       size="sm"
-                      disabled={isSubmitting}
                       className="h-8 text-xs"
+                      disabled={isUpdating}
                     >
-                      {isSubmitting ? "Enviando..." : "Enviar"}
+                      {isUpdating ? "Salvando..." : "Salvar"}
                     </Button>
                   </div>
-                </div>
-                {errors.content && (
-                  <p className="text-xs text-destructive mt-1 ml-1">
-                    {errors.content.message}
-                  </p>
-                )}
-              </form>
+                </form>
+              ) : (
+                <form onSubmit={handleSubmit(onSubmitComment)}>
+                  <div className="relative">
+                    <Textarea
+                      placeholder="Escreva um comentário..."
+                      className="min-h-20 pr-20 resize-none bg-background focus-visible:ring-1"
+                      {...register("content")}
+                    />
+                    <div className="absolute bottom-2 right-2">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={isSubmitting}
+                        className="h-8 text-xs"
+                      >
+                        {isSubmitting ? "Enviando..." : "Enviar"}
+                      </Button>
+                    </div>
+                  </div>
+                  {errors.content && (
+                    <p className="text-xs text-destructive mt-1 ml-1">
+                      {errors.content.message}
+                    </p>
+                  )}
+                </form>
+              )}
             </div>
           </div>
 
@@ -395,9 +619,17 @@ export function TaskDetailDialog({
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-muted-foreground">Prazo</p>
-                    <p className="font-medium text-foreground">
-                      {formatFriendlyDate(task?.deadline)}
-                    </p>
+                    {isEditing ? (
+                      <input
+                        type="date"
+                        className="border-input h-9 rounded-md bg-transparent px-3 text-sm w-full"
+                        {...registerTask("deadline")}
+                      />
+                    ) : (
+                      <p className="font-medium text-foreground">
+                        {formatFriendlyDate(task?.deadline)}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -437,7 +669,7 @@ export function TaskDetailDialog({
                       <CommandInput placeholder="Buscar usuário..." />
                       <CommandList>
                         <CommandEmpty>Nenhum usuário encontrado.</CommandEmpty>
-                        <CommandGroup heading="Sugestões">
+                        <CommandGroup heading="Usuários">
                           {isLoadingAllUsers ? (
                             <CommandItem
                               disabled
@@ -446,24 +678,19 @@ export function TaskDetailDialog({
                               <span>Carregando...</span>
                             </CommandItem>
                           ) : (
-                            candidateUsers.map((user) => {
-                              const isAssigned = task?.assignees?.includes(
-                                user.id
-                              );
+                            (candidateUsers ?? []).map((user) => {
+                              const isAssigned = (
+                                task?.assignees ?? []
+                              ).includes(user.id);
                               return (
                                 <CommandItem
                                   key={user.id}
                                   value={user.username}
-                                  onSelect={() => {
-                                    if (!isAssigned) handleAssignUser(user.id);
-                                  }}
-                                  disabled={isAssigned}
+                                  onSelect={() => handleToggleAssign(user.id)}
                                   className="flex items-center justify-between"
                                 >
                                   <span>{user.username}</span>
-                                  {isAssigned && (
-                                    <Check className="h-4 w-4 opacity-50" />
-                                  )}
+                                  {isAssigned && <Check className="h-4 w-4" />}
                                 </CommandItem>
                               );
                             })
@@ -474,7 +701,6 @@ export function TaskDetailDialog({
                   </PopoverContent>
                 </Popover>
               </div>
-
               <div className="space-y-2">
                 {task?.assignees?.length ? (
                   task.assignees.map((id) => {
@@ -482,7 +708,7 @@ export function TaskDetailDialog({
                     return (
                       <div
                         key={id}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-background border border-transparent hover:border-border transition-all"
+                        className="group flex items-center gap-3 p-2 rounded-lg hover:bg-background border border-transparent hover:border-border transition-all"
                       >
                         <Avatar className="h-8 w-8 border">
                           <AvatarFallback className="text-xs bg-muted">
@@ -496,6 +722,18 @@ export function TaskDetailDialog({
                           <p className="text-[10px] text-muted-foreground mt-1 truncate">
                             {u?.email || "user@email.com"}
                           </p>
+                        </div>
+                        <div className="ml-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className={`h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ${removingAssignee === id ? "opacity-100" : ""}`}
+                            onClick={() => handleRemoveAssignee(id)}
+                            disabled={removingAssignee === id}
+                            aria-label={`Remover ${u?.username ?? "participante"}`}
+                          >
+                            <Trash className="h-4 w-4 text-destructive" />
+                          </Button>
                         </div>
                       </div>
                     );

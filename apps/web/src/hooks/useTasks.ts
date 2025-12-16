@@ -65,6 +65,24 @@ export function useAssignTask() {
   });
 }
 
+export function useUnassignTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: AssignTaskDto }) =>
+      tasksService.unassignUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["task"] });
+      try {
+        queryClient.invalidateQueries({ queryKey: ["taskHistory"] });
+      } catch (e) {
+        queryClient.invalidateQueries();
+      }
+    },
+  });
+}
+
 export function useAddComment() {
   const queryClient = useQueryClient();
 

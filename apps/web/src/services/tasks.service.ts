@@ -35,6 +35,11 @@ export const tasksService = {
     return response.data;
   },
 
+  async unassignUser(id: string, data: AssignTaskDto): Promise<ResponseTaskDto> {
+    const response = await api.post<ResponseTaskDto>(`/api/tasks/${id}/unassign`, data);
+    return response.data;
+  },
+
   async addComment(id: string, data: CreateCommentDto): Promise<Comment> {
     const response = await api.post<Comment>(`/api/tasks/${id}/comment`, data);
     return response.data;

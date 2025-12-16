@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
+  email: z.email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
@@ -16,6 +16,7 @@ export const createTaskSchema = z.object({
   description: z.string().min(10, "Descrição deve ter no mínimo 10 caracteres"),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
   deadline: z.string().min(1, "Selecione uma data limite"),
+  assignees: z.array(z.string()).optional(),
 });
 
 export const updateTaskSchema = createTaskSchema.partial();
