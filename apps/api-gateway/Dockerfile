@@ -2,6 +2,9 @@ FROM node:20-alpine AS development
 
 WORKDIR /app
 
+# Instalar wget para healthchecks
+RUN apk add --no-cache wget
+
 COPY package*.json turbo.json ./
 COPY . .
 
