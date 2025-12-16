@@ -15,7 +15,7 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_API_URL=http://localhost:3001
-      - VITE_WS_URL=http://localhost:3004
+      - VITE_WEBSOCKET_URL=http://localhost:3004
     networks:
       - challenge-network
     command: npm run dev --workspace=@challenge/web -- --host 0.0.0.0 --port 3000
@@ -91,6 +91,7 @@ services:
         condition: service_healthy
     networks:
       - challenge-network
+    command: sh -c "npm run migration:run --workspace=@challenge/auth-service && npm run start:dev --workspace=@challenge/auth-service"
 
   # -----------------------------------------------------------------------------
   # TASKS SERVICE (TCP + HTTP Health + RabbitMQ)
@@ -129,6 +130,7 @@ services:
         condition: service_healthy
     networks:
       - challenge-network
+    command: sh -c "npm run migration:run --workspace=@challenge/tasks-service && npm run start:dev --workspace=@challenge/tasks-service"
 
   # -----------------------------------------------------------------------------
   # NOTIFICATIONS SERVICE (HTTP/WS + RabbitMQ)
@@ -166,6 +168,7 @@ services:
         condition: service_healthy
     networks:
       - challenge-network
+    command: sh -c "npm run migration:run --workspace=@challenge/notifications-service && npm run start:dev --workspace=@challenge/notifications-service"
 
   # -----------------------------------------------------------------------------
   # INFRA (Database & Message Broker)
@@ -180,6 +183,7 @@ services:
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
