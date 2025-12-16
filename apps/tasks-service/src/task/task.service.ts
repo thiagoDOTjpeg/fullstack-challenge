@@ -57,7 +57,11 @@ export class TaskService {
 
     Object.assign(task, fieldsToUpdate);
     const updatedTask = await this.taskRepository.save(task);
-    const recipients = [...updatedTask.assignees, updatedTask.creatorId].filter((userId) => userId !== data.authorId)
+    const recipients = [...(updatedTask.assignees || []), updatedTask.creatorId].filter((userId) => userId !== data.authorId)
+
+    const notificationAction = (changes.new && (changes.new as any).status !== undefined && (changes.new as any).status !== (changes.old as any).status)
+      ? ActionType.STATUS_CHANGE
+      : ActionType.UPDATE;
 
     const payload: TaskNotificationPayload = {
       recipients,
@@ -68,7 +72,7 @@ export class TaskService {
         description: updatedTask.description,
         assigneeIds: updatedTask.assignees || []
       },
-      action: (data.status && data.status !== task.status) ? ActionType.STATUS_CHANGE : ActionType.UPDATE
+      action: notificationAction
     };
 
     this.notificationClient.emit("task.updated", payload);
@@ -187,7 +191,7 @@ export class TaskService {
         action: ActionType.ASSIGNED
       };
 
-      this.notificationClient.emit("task.update", payload);
+      this.notificationClient.emit("task.updated", payload);
     }
 
     return task;
