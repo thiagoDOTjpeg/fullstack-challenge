@@ -1,6 +1,7 @@
 import { ResponseNotificationDto } from '@challenge/types';
 import { JwtService } from '@nestjs/jwt';
 import { OnGatewayConnection, OnGatewayDisconnect, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { Logger } from 'nestjs-pino';
 import { Server, Socket } from 'socket.io';
 
 @WebSocketGateway({ cors: { origin: '*' } })
@@ -8,7 +9,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly jwtService: JwtService) { }
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly logger: Logger
+  ) { }
 
   async handleConnection(client: Socket) {
     try {
@@ -34,16 +38,16 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
       client.data.user = payload;
 
-      console.log(`✅ Client connected: ${client.id} -> User: ${userId}`);
+      this.logger.log(`Client connected: ${client.id} -> User: ${userId}`);
 
     } catch (e: any) {
-      console.log(`🚫 Connection rejected: ${client.id} -> ${e.message}`);
+      this.logger.warn(`Connection rejected: ${client.id} -> ${e.message}`);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Client disconnected: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
   }
 
   notifyUser(userId: string, event: string, payload: ResponseNotificationDto) {
