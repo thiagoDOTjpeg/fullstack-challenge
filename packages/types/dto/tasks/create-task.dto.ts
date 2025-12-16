@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsDateString, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { TaskPriority, TaskStatus } from '../../enums';
 
 export class CreateTaskDto {
@@ -23,6 +23,12 @@ export class CreateTaskDto {
   @IsOptional()
   @IsEnum(TaskStatus)
   status?: TaskStatus;
+
+  @ApiPropertyOptional({ type: [String], example: ['user-id-1', 'user-id-2'], description: 'IDs dos usuários atribuídos' })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignees?: string[];
 
   @ApiProperty({ example: '2025-12-25T23:59:59Z', description: 'Data limite ISO8601' })
   @IsDateString()
