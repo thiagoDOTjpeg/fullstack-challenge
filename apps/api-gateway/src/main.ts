@@ -1,4 +1,4 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger as NestLogger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config } from 'dotenv';
@@ -9,49 +9,61 @@ import { RpcExceptionFilter } from './common/filters/rpc-exception.filter';
 config();
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const logger = new NestLogger('Bootstrap');
+  try {
 
-  app.useLogger(app.get(Logger));
+    const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  app.setGlobalPrefix('api');
+    app.useLogger(app.get(Logger));
 
-  const config = new DocumentBuilder()
-    .setTitle("Jungle Challenge API")
-    .setDescription("API Gateway documentation")
-    .setVersion("1.0")
-    .addTag("tasks")
-    .addTag("auth")
-    .build();
+    app.setGlobalPrefix('api');
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api/docs", app, document, {
-    jsonDocumentUrl: "api/json"
-  });
+    const config = new DocumentBuilder()
+      .setTitle("Jungle Challenge API")
+      .setDescription("API Gateway documentation")
+      .setVersion("1.0")
+      .addTag("tasks")
+      .addTag("auth")
+      .build();
 
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://localhost:5174',
-    ],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true,
-    allowedHeaders: 'Content-Type, Accept, Authorization',
-  });
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup("api/docs", app, document, {
+      jsonDocumentUrl: "api/json"
+    });
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true
-  }));
+    app.enableCors({
+      origin: [
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://localhost:5174',
+      ],
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+      credentials: true,
+      allowedHeaders: 'Content-Type, Accept, Authorization',
+    });
 
-  app.useGlobalFilters(new RpcExceptionFilter());
+    app.useGlobalPipes(new ValidationPipe({
+      whitelist: true,
+      transform: true
+    }));
 
-  const port = process.env.PORT || 3001;
-  await app.listen(port, '0.0.0.0');
+    app.useGlobalFilters(new RpcExceptionFilter());
 
-  const logger = app.get(Logger);
-  logger.log(`API Gateway running on port ${port}`);
-  logger.log(`Health Check available at http://localhost:${port}/api/health`);
-  logger.log(`Swagger available at http://localhost:${port}/api/docs`);
+    const port = process.env.PORT || 3001;
+    await app.listen(port, '0.0.0.0');
+
+    const appLogger = app.get(Logger)
+    appLogger.log(`API Gateway running on port ${port}`);
+    appLogger.log(`Health Check available at http://localhost:${port}/api/health`);
+    appLogger.log(`Swagger available at http://localhost:${port}/api/docs`);
+  } catch (error: any) {
+    logger.error('❌ Fatal Error during bootstrap:', error);
+
+    if (error.code === 'EADDRINUSE') {
+      logger.error(`Port is already in use. Check if another instance is running.`);
+    }
+
+    process.exit(1);
+  }
 }
 bootstrap();
