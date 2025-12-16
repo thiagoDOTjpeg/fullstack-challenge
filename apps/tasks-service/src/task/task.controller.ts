@@ -18,6 +18,11 @@ export class TaskController {
     return this.taskService.assignUser(data);
   }
 
+  @MessagePattern("task.unassign_user")
+  unassignUser(@Payload() data: AssignTaskPayload) {
+    return this.taskService.unassignUser(data);
+  }
+
   @MessagePattern("task.update")
   update(@Payload() data: UpdateTaskPayload) {
     return this.taskService.update(data);

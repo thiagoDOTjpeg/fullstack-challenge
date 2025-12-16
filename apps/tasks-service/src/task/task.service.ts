@@ -57,9 +57,10 @@ export class TaskService {
 
     Object.assign(task, fieldsToUpdate);
     const updatedTask = await this.taskRepository.save(task);
+    const recipients = [...updatedTask.assignees, updatedTask.creatorId].filter((userId) => userId !== data.authorId)
 
     const payload: TaskNotificationPayload = {
-      recipients: updatedTask.assignees || [],
+      recipients,
       task: {
         id: updatedTask.id,
         title: updatedTask.title,
@@ -149,6 +150,49 @@ export class TaskService {
     }
     return task;
   }
+
+  async unassignUser(data: AssignTaskPayload): Promise<Task> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
+
+    if (!task) throw new TaskNotFoundRpcException();
+
+    if (!task.assignees) task.assignees = [];
+
+    if (task.assignees.includes(data.assigneeId)) {
+      const oldAssignees = [...task.assignees];
+
+      task.assignees = task.assignees.filter(a => a !== data.assigneeId);
+      const savedTask = await this.taskRepository.save(task);
+
+
+      await this.historyRepository.save({
+        taskId: task.id,
+        action: ActionType.ASSIGNED,
+        changes: {
+          old: { assignees: oldAssignees },
+          new: { assignees: task.assignees }
+        },
+        changedBy: data.assignerId
+      });
+
+      const payload: TaskNotificationPayload = {
+        recipients: [data.assigneeId],
+        task: {
+          id: savedTask.id,
+          assigneeIds: savedTask.assignees,
+          status: savedTask.status,
+          title: savedTask.title,
+          description: savedTask.description,
+        },
+        action: ActionType.ASSIGNED
+      };
+
+      this.notificationClient.emit("task.update", payload);
+    }
+
+    return task;
+  }
+
 
   async comment(data: CreateCommentPayload): Promise<Comment> {
     const task = await this.taskRepository.findOne({ where: { id: data.taskId } })
@@ -264,17 +308,7 @@ export class TaskService {
         }
 
         case ActionType.UPDATE: {
-          const keys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
-          const parts: string[] = [];
-          for (const key of keys) {
-            if (key === 'assignees') continue;
-            const oldV = oldObj[key];
-            const newV = newObj[key];
-            if (oldV !== newV) {
-              parts.push(`alterou ${key} para "${newV ?? ''}"`);
-            }
-          }
-          content = parts.join('; ') || 'atualizou a tarefa';
+          content = 'atualizou a tarefa';
           break;
         }
 
