@@ -2,13 +2,14 @@ FROM node:20-alpine AS development
 
 WORKDIR /app
 
-# Instalar wget para healthchecks
 RUN apk add --no-cache wget
 
 COPY package*.json turbo.json ./
 COPY . .
 
 RUN npm install
+
+RUN npm run build --workspace=@challenge/tasks-service
 
 EXPOSE 3003 3013
 
