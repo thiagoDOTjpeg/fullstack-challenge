@@ -11,7 +11,9 @@ config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  app.useLogger(app.get(Logger))
+  app.useLogger(app.get(Logger));
+
+  app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
     .setTitle("Jungle Challenge API")
@@ -20,24 +22,36 @@ async function bootstrap() {
     .addTag("tasks")
     .addTag("auth")
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("api/docs", app, document, {
-    jsonDocumentUrl: "api-json"
+    jsonDocumentUrl: "api/json"
   });
 
   app.enableCors({
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+    ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Accept, Authorization',
   });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    transform: true
+  }));
+
   app.useGlobalFilters(new RpcExceptionFilter());
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
+  const port = process.env.PORT || 3001;
+  await app.listen(port, '0.0.0.0');
 
-  const logger = app.get(Logger)
+  const logger = app.get(Logger);
   logger.log(`API Gateway running on port ${port}`);
+  logger.log(`Health Check available at http://localhost:${port}/api/health`);
+  logger.log(`Swagger available at http://localhost:${port}/api/docs`);
 }
 bootstrap();

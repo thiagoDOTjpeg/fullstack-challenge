@@ -5,20 +5,19 @@ import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
 
 @Module({
-  imports: [ClientsModule.register([
-    {
-      name: "AUTH_SERVICE",
-      transport: Transport.RMQ,
-      options: {
-        urls: ["amqp://admin:admin@localhost:5672"],
-        queue: "auth_queue",
-        queueOptions: {
-          durable: false
+  imports: [
+    ClientsModule.register([
+      {
+        name: "AUTH_SERVICE",
+        transport: Transport.TCP,
+        options: {
+          host: process.env.AUTH_SERVICE_HOST || 'localhost',
+          port: Number(process.env.AUTH_SERVICE_PORT) || 3002,
         }
       }
-    }
-  ]),
-    PassportModule],
+    ]),
+    PassportModule
+  ],
   controllers: [AuthController],
   providers: [JwtStrategy],
   exports: [PassportModule, JwtStrategy]

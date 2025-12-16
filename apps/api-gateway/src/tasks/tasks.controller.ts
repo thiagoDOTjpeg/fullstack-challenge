@@ -12,7 +12,7 @@ import {
 
 @ApiTags("tasks")
 @ApiBearerAuth()
-@Controller("/api/tasks")
+@Controller("/tasks")
 export class TasksController {
   constructor(@Inject("TASKS_SERVICE") private readonly tasksClient: ClientProxy) { }
 

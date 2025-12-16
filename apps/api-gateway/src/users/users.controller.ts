@@ -5,7 +5,7 @@ import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@ne
 
 @ApiTags('users')
 @ApiBearerAuth()
-@Controller('/api/users')
+@Controller('/users')
 export class UsersController {
   constructor(@Inject('AUTH_SERVICE') private readonly authClient: ClientProxy) { }
 

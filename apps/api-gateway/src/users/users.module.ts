@@ -7,11 +7,10 @@ import { UsersController } from './users.controller';
     ClientsModule.register([
       {
         name: 'AUTH_SERVICE',
-        transport: Transport.RMQ,
+        transport: Transport.TCP,
         options: {
-          urls: ['amqp://admin:admin@localhost:5672'],
-          queue: 'auth_queue',
-          queueOptions: { durable: false },
+          host: process.env.AUTH_SERVICE_HOST || 'localhost',
+          port: Number(process.env.AUTH_SERVICE_PORT) || 3002,
         },
       },
     ]),

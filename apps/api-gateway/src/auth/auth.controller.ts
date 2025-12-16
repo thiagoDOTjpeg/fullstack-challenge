@@ -10,7 +10,7 @@ import {
 } from '@nestjs/swagger';
 
 @ApiTags("auth")
-@Controller('/api/auth')
+@Controller('/auth')
 export class AuthController {
   constructor(
     @Inject("AUTH_SERVICE") private readonly authClient: ClientProxy
