@@ -1,6 +1,16 @@
 import TaskComments from "@/components/TaskComments";
 import TaskDescription from "@/components/TaskDescription";
 import TaskDetailHeader from "@/components/TaskDetailHeader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,6 +21,7 @@ import { useTaskHistory } from "@/hooks/useTaskHistory";
 import {
   useAddComment,
   useAssignTask,
+  useDeleteTask,
   useTask,
   useUnassignTask,
   useUpdateTask,
@@ -133,8 +144,10 @@ export function TaskDetailDialog({
   });
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const updateMutation = useUpdateTask();
+  const deleteMutation = useDeleteTask();
 
   const {
     register: registerTask,
@@ -242,6 +255,17 @@ export function TaskDetailDialog({
   const getUsername = (id: string) =>
     users.find((u) => u.id === id)?.username || "Desconhecido";
 
+  const handleDelete = async () => {
+    if (!taskId) return;
+    try {
+      await deleteMutation.mutateAsync(taskId);
+      toast.success("Tarefa deletada com sucesso!");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Erro ao deletar tarefa");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[1000px] h-[90vh] md:h-[85vh] p-0 overflow-hidden flex flex-col bg-background/95 backdrop-blur-sm">
@@ -255,6 +279,7 @@ export function TaskDetailDialog({
             resetTask(mapTaskToForm(task));
             setIsEditing(false);
           }}
+          onDelete={() => setShowDeleteDialog(true)}
           registerTask={registerTask}
         />
 
@@ -357,6 +382,27 @@ export function TaskDetailDialog({
           </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar tarefa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A tarefa será permanentemente
+              removida do sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

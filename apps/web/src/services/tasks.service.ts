@@ -30,6 +30,10 @@ export const tasksService = {
     return response.data;
   },
 
+  async deleteTask(id: string): Promise<void> {
+    await api.delete(`/api/tasks/${id}`);
+  },
+
   async assignUser(id: string, data: AssignTaskDto): Promise<ResponseTaskDto> {
     const response = await api.post<ResponseTaskDto>(`/api/tasks/${id}/assign`, data);
     return response.data;

@@ -16,7 +16,6 @@ export function useTaskHistory(taskId: string | null, initialLimit = DEFAULT_LIM
         if (pageInfo.currentPage < pageInfo.totalPages) return pageInfo.currentPage + 1;
         return undefined;
       }
-      // Fallback: if items length < limit then no next page
       const items = (lastPage as any)?.items ?? [];
       return items.length >= initialLimit ? undefined : undefined;
     },

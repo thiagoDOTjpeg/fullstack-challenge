@@ -52,6 +52,17 @@ export function useUpdateTask() {
   });
 }
 
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => tasksService.deleteTask(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
 export function useAssignTask() {
   const queryClient = useQueryClient();
 
@@ -61,6 +72,7 @@ export function useAssignTask() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
       queryClient.invalidateQueries({ queryKey: ["task"] });
+      queryClient.invalidateQueries({ queryKey: ["taskHistory"] });
     },
   });
 }
