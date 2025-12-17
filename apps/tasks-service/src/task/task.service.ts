@@ -7,6 +7,7 @@ import { CommentService } from 'src/comment/comment.service';
 import { Comment } from 'src/comment/entity/comment.entity';
 import { AuditChanges, TaskHistory } from 'src/history/entity/task-history.entity';
 import { Repository } from 'typeorm';
+import { DeleteResult } from 'typeorm/browser';
 import { Task } from './entity/task.entity';
 
 @Injectable()
@@ -20,6 +21,23 @@ export class TaskService {
 
   async create(dto: CreateTaskPayload): Promise<Task> {
     return await this.taskRepository.save(dto)
+  }
+
+  async delete(data: { taskId: string, userId: string }): Promise<DeleteResult> {
+    const task = await this.taskRepository.findOne({ where: { id: data.taskId } });
+    if (!task) throw new TaskNotFoundRpcException;
+
+    await this.historyRepository.save({
+      action: ActionType.DELETE,
+      taskId: task.id,
+      changes: {
+        new: {},
+        old: { ...task }
+      },
+      changedBy: data.userId
+    })
+
+    return await this.taskRepository.delete(data.taskId);
   }
 
   async update(data: UpdateTaskPayload): Promise<Task> {

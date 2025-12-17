@@ -8,9 +8,14 @@ import { TaskService } from "./task.service";
 export class TaskController {
   constructor(private readonly taskService: TaskService, private readonly commentService: CommentService) { }
 
-  @MessagePattern("tasks.create")
-  create(@Payload() dto: CreateTaskPayload) {
-    return this.taskService.create(dto)
+  @MessagePattern("task.create")
+  create(@Payload() data: CreateTaskPayload) {
+    return this.taskService.create(data)
+  }
+
+  @MessagePattern("task.delete")
+  delete(@Payload() data: { taskId: string, userId: string }) {
+    return this.taskService.delete(data)
   }
 
   @MessagePattern("task.assign_user")
