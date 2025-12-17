@@ -44,19 +44,130 @@ graph TB
     TASK_SCHEMA --> PG
     NOTIF_SCHEMA --> PG
 
-    style FE fill:#61dafb
-    style GW fill:#e535ab
-    style AUTH fill:#ffd43b
-    style TASK fill:#ffd43b
-    style NOTIF fill:#ffd43b
-    style PG fill:#336791
-    style RMQ fill:#ff6600
+    style FE fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
+    style GW fill:#e535ab,stroke:#333,stroke-width:2px,color:#000
+    style AUTH fill:#ffd43b,stroke:#333,stroke-width:2px,color:#000
+    style TASK fill:#ffd43b,stroke:#333,stroke-width:2px,color:#000
+    style NOTIF fill:#ffd43b,stroke:#333,stroke-width:2px,color:#000
+    style PG fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    style RMQ fill:#ff6600,stroke:#333,stroke-width:2px,color:#000
 ```
 
 ### Fluxo de Dados
 
 1. **Requisições Síncronas (TCP)**: Frontend → Gateway → Auth/Task Services
 2. **Eventos Assíncronos (RabbitMQ)**: Task Service → Queue → Notification Service
+
+---
+
+```mermaid
+erDiagram
+    %% ==========================================
+    %% SCHEMA: auth_service
+    %% ==========================================
+    users {
+        uuid id PK
+        varchar email UK
+        varchar name
+        varchar password_hash
+        varchar refresh_token_hash
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% ==========================================
+    %% SCHEMA: task_service
+    %% ==========================================
+    tasks {
+        uuid id PK
+        varchar title
+        text description
+        enum status "pending, in_progress, completed"
+        enum priority "low, medium, high"
+        uuid assigned_to FK "LOGICAL: auth_service.users.id"
+        timestamp due_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    task_history {
+        uuid id PK
+        uuid task_id FK
+        uuid user_id FK "LOGICAL: auth_service.users.id"
+        varchar field_changed
+        text old_value
+        text new_value
+        timestamp changed_at
+    }
+
+    task_comments {
+        uuid id PK
+        uuid task_id FK
+        uuid user_id FK "LOGICAL: auth_service.users.id"
+        text content
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% ==========================================
+    %% SCHEMA: notification_service
+    %% ==========================================
+    notifications {
+        uuid id PK
+        uuid user_id FK "LOGICAL: auth_service.users.id"
+        varchar type
+        varchar title
+        text message
+        jsonb metadata
+        boolean is_read
+        timestamp created_at
+        timestamp read_at
+    }
+
+    %% Relacionamentos DENTRO do mesmo schema (Physical FK)
+    tasks ||--o{ task_history : "has"
+    tasks ||--o{ task_comments : "has"
+
+    %% Relacionamentos CROSS-SCHEMA (Logical Reference - dotted lines)
+    tasks }o..|| users : "assigned_to (logical)"
+    task_history }o..|| users : "changed_by (logical)"
+    task_comments }o..|| users : "created_by (logical)"
+    notifications }o..|| users : "belongs_to (logical)"
+```
+
+## 📊 Detalhes dos Schemas
+
+### 🔐 auth_service (Auth Service)
+
+- **users**: Armazena credenciais e tokens de autenticação
+  - `password_hash`: Senha criptografada com bcrypt
+  - `refresh_token_hash`: Token hash para renovação de sessão
+  - `email`: Único (constraint)
+  - `username`: Único (constraint)
+
+### 📋 task_service (Task Service)
+
+- **tasks**: Entidade principal de tarefas
+  - `status`: ENUM (pending | in_progress | completed)
+  - `priority`: ENUM (low | medium | high)
+  - `assigned_to`: FK para users (cross-schema reference)
+
+- **task_history**: Auditoria de alterações
+  - Registra quem mudou, qual campo e valores antigo/novo
+
+- **task_comments**: Sistema de comentários
+  - Referências cross-schema para users
+
+### 🔔 notification_service (Notification Service)
+
+- **notifications**: Notificações assíncronas
+  - `metadata`: JSONB para dados flexíveis do evento
+  - `is_read`: Flag de leitura
+  - `user_id`: FK cross-schema para users
+
+## 🔗 Cross-Schema References
+
+> **Nota**: Embora os schemas sejam isolados, as FKs para `users` são **referências lógicas** (via UUID). O TypeORM não cria constraints físicas entre schemas diferentes, mantendo o desacoplamento dos microsserviços pois seriam banco de dados separados.
 
 ---
 
@@ -149,6 +260,52 @@ O desenvolvimento totalizou **49 horas**, com foco intensivo na robustez da infr
 
 ---
 
+## 📂 Estrutura do Projeto
+
+O projeto utiliza **Turborepo** para gerenciamento do monorepo:
+
+```bash
+fullstack-challenge
+├── apps/                               # 📦 Aplicações e Serviços
+│   ├── api-gateway/                    # Entrypoint HTTP (NestJS)
+│   │   ├── src/common/filters/         # Filtros para converter erros RPC -> HTTP
+│   │   └── src/[modules]/              # Controllers que roteiam para os microsserviços
+│   │
+│   ├── auth-service/                   # Microsserviço de Autenticação (TCP)
+│   │   ├── db/migrations/              # Migrations exclusivas do schema 'auth_service'
+│   │   └── src/auth/                   # Lógica de JWT e Hash de Senha
+│   │
+│   ├── tasks-service/                  # Microsserviço Core (Híbrido: TCP + RabbitMQ)
+│   │   ├── db/migrations/              # Migrations do schema 'task_service'
+│   │   ├── src/history/                # Lógica de Auditoria (Audit Log)
+│   │   └── src/task/                   # CRUD e Publicação de Eventos
+│   │
+│   ├── notifications-service/          # Microsserviço de Notificações (RabbitMQ Consumer)
+│   │   ├── src/notifications.gateway.ts # WebSocket Gateway (Socket.io)
+│   │   └── src/notifications/          # Consumo de filas e disparo de eventos
+│   │
+│   └── web/                            # Frontend (React + Vite + TanStack)
+│       ├── src/components/ui/          # Componentes Shadcn/UI
+│       ├── src/hooks/                  # Custom Hooks (React Query + WebSocket)
+│       ├── src/services/               # Camada de API (Axios)
+│       └── src/pages/                  # Rotas da aplicação (Kanban, Login)
+│
+├── packages/                           # 🛠️ Bibliotecas Compartilhadas (Shared Libs)
+│   ├── types/                          # 'Source of Truth': DTOs, Enums e Interfaces
+│   │   ├── dto/                        # Objetos de transferência de dados
+│   │   └── payloads/                   # Payloads de eventos RabbitMQ/JWT
+│   ├── exceptions/                     # Padronização de erros entre serviços
+│   └── eslint-config/                  # Regras de Linting compartilhadas
+│
+├── scripts/
+│   └── seed.ts                         # Script para popular o banco de dados
+│
+├── docker-compose.yml                  # Orquestração da Infraestrutura
+└── turbo.json                          # Pipeline de Build do Monorepo
+```
+
+---
+
 ## 🚀 Como Executar
 
 ### Pré-requisitos
@@ -187,3 +344,34 @@ Todas as variáveis estão no `docker-compose.yml` para facilitar o teste. Em pr
 - **Message Broker**: RabbitMQ
 - **Containerização**: Docker, Docker Compose
 - **Testes**: Jest (Backend)
+
+### 🌱 Populando o Banco de Dados
+
+Para testar o projeto com dados reais, execute o script de seed (com os containers rodando):
+
+```bash
+# Instala dependências do script (caso necessário)
+npm install
+
+# Executa o seed
+npm run seed
+```
+
+---
+
+### 📖 Documentação da API
+
+Após subir os containers, a documentação interativa (Swagger/OpenAPI) estará disponível em:
+
+👉 **[http://localhost:3001/api/docs](http://localhost:3001/api/docs)**
+
+---
+
+## 🔧 Troubleshooting (Resolução de Problemas)
+
+**1. Erro: "Port already in use"**
+Garanta que as portas `3000`, `3001`, `5432` e `5672` estejam livres.
+
+```bash
+docker compose down -v
+```
