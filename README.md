@@ -136,16 +136,16 @@ Queria uma experiência de **"Zero Configuração"** para quem for rodar o proje
 
 O desenvolvimento totalizou **49 horas**, com foco intensivo na robustez da infraestrutura e na lógica de sincronização entre os serviços.
 
-| Área de Desenvolvimento        | Tempo Real  | Destaques do WakaTime                                   |
-| :----------------------------- | :---------- | :------------------------------------------------------ |
-| **Frontend (React + UI)**      | 16h 30m     | `TaskDetailDialog.tsx` (2h 35m), `KanbanBoard.tsx`      |
-| **Infraestrutura (Docker)**    | 7h 00m      | `docker-compose.yml` (2h 54m), Healthchecks e Tunelling |
-| **Task Service (Core Logic)**  | 8h 15m      | `task.service.ts` (3h 27m), Histórico e Auditoria       |
-| **Auth Service & Gateway**     | 6h 30m      | `auth.service.ts` (1h 36m), JWT Strategy, TCP Transport |
-| **Notification Service (RMQ)** | 4h 30m      | `notifications.gateway.ts`, Consumo de filas            |
-| **Refatoração & Testes**       | 4h 20m      | Ajustes de arquitetura (Mudança RMQ -> TCP)             |
-| **Documentação & Setup**       | 2h 00m      | `README.md`, Diagramas e Configurações iniciais         |
-| **TOTAL GERAL**                | **49h 05m** | **Dados extraídos do WakaTime**                         |
+| Área de Desenvolvimento        | Tempo Real  |                                 |
+| :----------------------------- | :---------- | :------------------------------ |
+| **Frontend (React + UI)**      | 16h 30m     |
+| **Infraestrutura (Docker)**    | 7h 00m      |
+| **Task Service (Core Logic)**  | 8h 15m      |
+| **Auth Service & Gateway**     | 6h 30m      |
+| **Notification Service (RMQ)** | 4h 30m      |
+| **Refatoração & Testes**       | 4h 20m      |
+| **Documentação & Setup**       | 2h 00m      |
+| **TOTAL GERAL**                | **49h 05m** | **Dados extraídos do WakaTime** |
 
 ---
 
