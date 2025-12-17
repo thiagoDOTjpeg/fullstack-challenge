@@ -1,5 +1,5 @@
 import { AssignTaskDto, AssignTaskPayload, CreateCommentDto, CreateCommentPayload, CreateTaskDto, CreateTaskPayload, PaginationQueryDto, PaginationQueryPayload, TaskHistoryPayload, UpdateTaskDto, UpdateTaskPayload } from '@challenge/types';
-import { Body, Controller, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AuthGuard } from '@nestjs/passport';
 import {
@@ -27,7 +27,22 @@ export class TasksController {
       ...dto,
       creatorId: req.user.id
     };
-    return this.tasksClient.send("tasks.create", payload);
+    return this.tasksClient.send("task.create", payload);
+  }
+
+  @UseGuards(AuthGuard("jwt"))
+  @Delete("/:id")
+  @ApiOperation({ summary: 'Deletar uma tarefa' })
+  @ApiParam({ name: 'id', description: 'ID da tarefa (UUID)', example: 'uuid-v4' })
+  @ApiResponse({ status: 204, description: 'Tarefa deletada com sucesso.' })
+  @ApiResponse({ status: 404, description: 'Tarefa não encontrada.' })
+  @ApiResponse({ status: 401, description: 'Não autorizado.' })
+  deleteTask(@Param("id") taskId: string, @Req() req: any) {
+    const payload = {
+      taskId,
+      userId: req.user.id
+    };
+    return this.tasksClient.send("task.delete", payload);
   }
 
   @UseGuards(AuthGuard("jwt"))
