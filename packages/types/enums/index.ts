@@ -17,5 +17,6 @@ export enum ActionType {
   STATUS_CHANGE = "STATUS_CHANGE",
   UPDATE = "UPDATE",
   CREATED = "CREATED",
-  COMMENT = "COMMENT"
+  COMMENT = "COMMENT",
+  DELETE = "DELETE"
 }
