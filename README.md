@@ -229,17 +229,18 @@ Queria uma experiência de **"Zero Configuração"** para quem for rodar o proje
 
 1. **Sem retry policy nas filas**: Se o Notification Service falhar ao processar uma mensagem, ela é perdida
 2. **Autenticação básica**: JWT stateless (dificulta revogação imediata)
+3. **Race Condition na Atribuição de Tarefas**: A lógica atual (findOne + save) não é atómica. Em alta concorrência, um usuário pode sobrescrever a atribuição de outro. Requer Optimistic Locking ou operações de array nativas do SQL.
 
 ### O que Melhoraria com Mais Tempo
 
 - [ ] **Gestão de Sessão com Redis**: Implementar controle de sessão para mitigar _Race Conditions_ e _Replay Attacks_, além de permitir _Blacklist_ para revogação de tokens.
-- [ ] Implementar Circuit Breaker pattern nas comunicações TCP
-- [ ] Adicionar observabilidade (Prometheus + Grafana)
-- [ ] Implementar testes E2E com Cypress
-- [ ] Cache com Redis para listagem de tarefas
-- [ ] Dead Letter Queue (DLQ) no RabbitMQ
-- [ ] CI/CD com GitHub Actions
-- [ ] Documentação Swagger/OpenAPI completa
+- [ ] Mitigação de Concorrência: Implementar versionamento de entidade (@VersionColumn) no TypeORM para garantir atomicidade nas edições e atribuições.
+- [ ] Gestão de Sessão Distribuída: Substituir o JWT stateless puro por gestão via Redis, permitindo revogação real de tokens (Blacklist) e controle de sessões ativas.
+- [ ] Resiliência com Circuit Breaker: Adicionar padrão Circuit Breaker (via opossum) nas chamadas TCP do Gateway para evitar falhas em cascata quando um microsserviço travar.
+- [ ] Observabilidade Real: Implementar OpenTelemetry (Jaeger/Zipkin) para rastreamento distribuído (Tracing) entre HTTP → RPC → RabbitMQ.
+- [ ] Contratos Unificados: Automatizar a sincronia entre DTOs do Backend e Schemas Zod do Frontend usando o pacote types como única fonte da verdade.
+- [ ] Infraestrutura de Mensageria: Configurar Dead Letter Exchanges (DLX) no RabbitMQ para isolar mensagens venenosas (poison messages).
+- [ ] Testes de Integração: Adicionar testes E2E focados nos fluxos críticos (Auth → Criar Tarefa → Receber Notificação WebSocket).
 
 ---
 
